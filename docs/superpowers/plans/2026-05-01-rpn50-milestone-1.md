@@ -2,11 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the first working clean-room HP-style RPN calculator core with persistent MCP access.
+**Goal:** Build the first working clean-room User RPL-inspired calculator core with persistent MCP access.
 
-**Architecture:** The implementation is split into a pure TypeScript calculator core, a strict parser, a stateful session wrapper with trace output, manual-derived conformance fixtures, and an MCP server that exposes the session. The core has no MCP or natural-language dependencies.
+**Architecture:** The implementation is split into a pure TypeScript RPL object model, strict recursive parser, deterministic evaluator, persistent session wrapper with trace output, conformance fixtures, and an MCP server. The core has no MCP or natural-language dependencies.
 
-**Tech Stack:** TypeScript, Node.js ESM, Vitest, `@modelcontextprotocol/sdk`.
+**Tech Stack:** TypeScript, Node.js ESM, Vitest, `@modelcontextprotocol/sdk`, `zod`.
+
+**Design Spec:** `docs/superpowers/specs/2026-05-01-rpl-cleanroom-design.md`
 
 ---
 
@@ -15,18 +17,34 @@
 - `package.json`: npm metadata, scripts, runtime and test dependencies.
 - `tsconfig.json`: strict TypeScript configuration for ESM output.
 - `vitest.config.ts`: Vitest configuration.
-- `src/types.ts`: shared calculator, stack, token, result, trace, and error types.
-- `src/parser.ts`: strict tokenizer for HP-style numeric literals and command names.
-- `src/core.ts`: pure stack machine and command application logic.
+- `.gitignore`: generated output and local OS files.
+- `src/types.ts`: shared RPL object, parser, state, trace, and error types.
+- `src/parser.ts`: strict recursive parser for RPL objects and executable names.
+- `src/core.ts`: pure stack, arithmetic, variable, and evaluator logic.
 - `src/session.ts`: persistent calculator session wrapper.
-- `src/mcp/server.ts`: MCP stdio server exposing `execute`, `get_stack`, `clear`, and `get_trace`.
+- `src/mcp/server.ts`: MCP stdio server exposing calculator tools.
+- `tests/types-smoke.test.ts`: setup smoke test.
 - `tests/parser.test.ts`: parser tests.
-- `tests/core-stack.test.ts`: literal and stack operation tests.
+- `tests/core-stack.test.ts`: stack operation tests.
 - `tests/core-arithmetic.test.ts`: arithmetic and atomic error tests.
+- `tests/core-eval.test.ts`: program, `EVAL`, `STO`, and name lookup tests.
 - `tests/session.test.ts`: persistence and trace tests.
-- `tests/conformance/manual-basic.test.ts`: manual-style golden tests with source labels.
-- `tests/mcp-server.test.ts`: MCP tool handler tests through exported factory functions.
+- `tests/conformance/rpl-identity.test.ts`: RPL identity examples.
+- `tests/mcp-server.test.ts`: MCP tool handler and server registration tests.
 - `README.md`: project overview and local commands.
+
+---
+
+## Subagent Execution Strategy
+
+Tasks 1-6 are sequential because they share `src/types.ts`, `src/parser.ts`, and `src/core.ts`.
+
+After Task 6 passes, Tasks 7 and 8 may run in parallel:
+
+- Task 7 owns `tests/conformance/rpl-identity.test.ts` and `README.md`.
+- Task 8 owns `src/mcp/server.ts` and `tests/mcp-server.test.ts`.
+
+Task 9 is controller-owned final verification.
 
 ---
 
@@ -36,6 +54,7 @@
 - Create: `package.json`
 - Create: `tsconfig.json`
 - Create: `vitest.config.ts`
+- Create: `.gitignore`
 - Create: `src/types.ts`
 - Create: `tests/types-smoke.test.ts`
 
@@ -45,21 +64,21 @@ Create `tests/types-smoke.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import type { StackValue } from "../src/types.js";
+import type { RplObject } from "../src/types.js";
 
-describe("shared types", () => {
-  it("represents real-number stack values", () => {
-    const value: StackValue = { kind: "real", value: 42 };
+describe("shared RPL types", () => {
+  it("represents real-number objects", () => {
+    const value: RplObject = { kind: "real", value: 42 };
     expect(value).toEqual({ kind: "real", value: 42 });
   });
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [ ] **Step 2: Run the smoke test to verify it fails**
 
 Run: `npm test -- tests/types-smoke.test.ts`
 
-Expected: FAIL because `package.json`, Vitest, and `src/types.ts` do not exist yet.
+Expected: FAIL because project tooling and `src/types.ts` do not exist yet.
 
 - [ ] **Step 3: Add tooling and the first shared type**
 
@@ -71,16 +90,16 @@ Create `package.json`:
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Clean-room HP-style persistent RPN calculator with MCP access.",
+  "description": "Clean-room User RPL-inspired persistent object-stack calculator with MCP access.",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "mcp": "node dist/mcp/server.js"
+    "mcp": "node dist/src/mcp/server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -123,10 +142,18 @@ export default defineConfig({
 });
 ```
 
+Create `.gitignore`:
+
+```gitignore
+dist/
+node_modules/
+.DS_Store
+```
+
 Create `src/types.ts`:
 
 ```ts
-export type StackValue = {
+export type RplObject = {
   kind: "real";
   value: number;
 };
@@ -138,7 +165,7 @@ Run: `npm install`
 
 Expected: dependencies install and `package-lock.json` is created.
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [ ] **Step 5: Run the smoke test to verify it passes**
 
 Run: `npm test -- tests/types-smoke.test.ts`
 
@@ -147,13 +174,13 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add package.json package-lock.json tsconfig.json vitest.config.ts src/types.ts tests/types-smoke.test.ts
+git add package.json package-lock.json tsconfig.json vitest.config.ts .gitignore src/types.ts tests/types-smoke.test.ts
 git commit -m "chore: set up TypeScript test harness"
 ```
 
 ---
 
-### Task 2: Strict Parser
+### Task 2: Recursive RPL Parser
 
 **Files:**
 - Modify: `src/types.ts`
@@ -169,25 +196,47 @@ import { describe, expect, it } from "vitest";
 import { parseInput } from "../src/parser.js";
 
 describe("parseInput", () => {
-  it("parses real literals and command tokens in order", () => {
+  it("parses real literals and executable names in order", () => {
     expect(parseInput("2 3 + DUP")).toEqual({
       ok: true,
-      tokens: [
-        { kind: "literal", value: { kind: "real", value: 2 } },
-        { kind: "literal", value: { kind: "real", value: 3 } },
-        { kind: "command", name: "+" },
-        { kind: "command", name: "DUP" }
+      objects: [
+        { kind: "real", value: 2, source: "2" },
+        { kind: "real", value: 3, source: "3" },
+        { kind: "name", name: "+", source: "+" },
+        { kind: "name", name: "DUP", source: "DUP" }
       ]
     });
   });
 
-  it("normalizes alphabetic commands to uppercase", () => {
-    expect(parseInput("dup sqrt")).toEqual({
+  it("parses quoted names, programs, lists, and strings", () => {
+    expect(parseInput("<< 1 'A' STO >> { 2 \"hi\" }")).toEqual({
       ok: true,
-      tokens: [
-        { kind: "command", name: "DUP" },
-        { kind: "command", name: "SQRT" }
+      objects: [
+        {
+          kind: "program",
+          body: [
+            { kind: "real", value: 1, source: "1" },
+            { kind: "quotedName", name: "A", source: "'A'" },
+            { kind: "name", name: "STO", source: "STO" }
+          ],
+          source: "<< 1 'A' STO >>"
+        },
+        {
+          kind: "list",
+          items: [
+            { kind: "real", value: 2, source: "2" },
+            { kind: "string", value: "hi", source: "\"hi\"" }
+          ],
+          source: "{ 2 \"hi\" }"
+        }
       ]
+    });
+  });
+
+  it("accepts guillemet program delimiters", () => {
+    expect(parseInput("« 2 3 + »")).toMatchObject({
+      ok: true,
+      objects: [{ kind: "program" }]
     });
   });
 
@@ -195,6 +244,13 @@ describe("parseInput", () => {
     expect(parseInput("1.2.3")).toEqual({
       ok: false,
       error: { code: "InvalidToken", message: "Invalid token: 1.2.3" }
+    });
+  });
+
+  it("rejects unterminated programs", () => {
+    expect(parseInput("<< 1 2 +")).toEqual({
+      ok: false,
+      error: { code: "ParseError", message: "Unterminated program" }
     });
   });
 });
@@ -211,15 +267,13 @@ Expected: FAIL because `src/parser.ts` does not exist.
 Replace `src/types.ts` with:
 
 ```ts
-export type StackValue = {
-  kind: "real";
-  value: number;
-};
-
 export type CalculatorErrorCode =
   | "InvalidToken"
+  | "ParseError"
   | "InvalidCommand"
+  | "UndefinedName"
   | "StackUnderflow"
+  | "TypeMismatch"
   | "DivisionByZero"
   | "InvalidOperation";
 
@@ -228,41 +282,206 @@ export type CalculatorError = {
   message: string;
 };
 
-export type Token =
-  | { kind: "literal"; value: StackValue }
-  | { kind: "command"; name: string };
+export type RplObject =
+  | { kind: "real"; value: number; source?: string }
+  | { kind: "name"; name: string; source?: string }
+  | { kind: "quotedName"; name: string; source?: string }
+  | { kind: "program"; body: RplObject[]; source?: string }
+  | { kind: "list"; items: RplObject[]; source?: string }
+  | { kind: "string"; value: string; source?: string };
 
 export type ParseResult =
-  | { ok: true; tokens: Token[] }
+  | { ok: true; objects: RplObject[] }
   | { ok: false; error: CalculatorError };
 ```
 
 Create `src/parser.ts`:
 
 ```ts
-import type { ParseResult, Token } from "./types.js";
+import type { CalculatorError, ParseResult, RplObject } from "./types.js";
 
-const REAL_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
-const INVALID_NUMERIC_PATTERN = /^[+-]?[.\d]+$/;
+const REAL_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+const INVALID_NUMERIC_PATTERN = /^[+-]?[.\d]+(?:[eE][+-]?\d*)?$/;
+const SIMPLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-export function parseInput(input: string): ParseResult {
-  const parts = input.trim().split(/\s+/).filter(Boolean);
-  const tokens: Token[] = [];
+type LexToken = { text: string };
 
-  for (const part of parts) {
-    if (REAL_PATTERN.test(part)) {
-      tokens.push({ kind: "literal", value: { kind: "real", value: Number(part) } });
+const error = (code: CalculatorError["code"], message: string): ParseResult => ({
+  ok: false,
+  error: { code, message }
+});
+
+function lex(input: string): LexToken[] | CalculatorError {
+  const tokens: LexToken[] = [];
+  let index = 0;
+
+  while (index < input.length) {
+    const char = input[index];
+    if (/\s/.test(char)) {
+      index += 1;
       continue;
     }
 
-    if (INVALID_NUMERIC_PATTERN.test(part)) {
-      return { ok: false, error: { code: "InvalidToken", message: `Invalid token: ${part}` } };
+    if (input.startsWith("<<", index)) {
+      tokens.push({ text: "<<" });
+      index += 2;
+      continue;
     }
 
-    tokens.push({ kind: "command", name: part.toUpperCase() });
+    if (input.startsWith(">>", index)) {
+      tokens.push({ text: ">>" });
+      index += 2;
+      continue;
+    }
+
+    if (char === "«" || char === "»" || char === "{" || char === "}") {
+      tokens.push({ text: char });
+      index += 1;
+      continue;
+    }
+
+    if (char === "\"") {
+      let text = "\"";
+      index += 1;
+      while (index < input.length) {
+        const current = input[index];
+        text += current;
+        index += 1;
+        if (current === "\\" && index < input.length) {
+          text += input[index];
+          index += 1;
+          continue;
+        }
+        if (current === "\"") {
+          tokens.push({ text });
+          break;
+        }
+      }
+      if (!text.endsWith("\"")) {
+        return { code: "ParseError", message: "Unterminated string" };
+      }
+      continue;
+    }
+
+    let text = "";
+    while (index < input.length && !/\s/.test(input[index])) {
+      if (input.startsWith("<<", index) || input.startsWith(">>", index)) break;
+      if ("{}«»".includes(input[index]) || input[index] === "\"") break;
+      text += input[index];
+      index += 1;
+    }
+    if (text.length > 0) {
+      tokens.push({ text });
+      continue;
+    }
+
+    return { code: "InvalidToken", message: `Invalid token: ${input[index]}` };
   }
 
-  return { ok: true, tokens };
+  return tokens;
+}
+
+function parseString(text: string): RplObject | CalculatorError {
+  const inner = text.slice(1, -1);
+  let value = "";
+  for (let index = 0; index < inner.length; index += 1) {
+    const char = inner[index];
+    if (char === "\\") {
+      const next = inner[index + 1];
+      if (next === "\"" || next === "\\") {
+        value += next;
+        index += 1;
+        continue;
+      }
+      return { code: "ParseError", message: `Invalid string escape: \\${next ?? ""}` };
+    }
+    value += char;
+  }
+  return { kind: "string", value, source: text };
+}
+
+function parseObjects(tokens: LexToken[], stop: string | undefined): { objects: RplObject[]; index: number } | CalculatorError {
+  const objects: RplObject[] = [];
+  let index = 0;
+
+  while (index < tokens.length) {
+    const text = tokens[index].text;
+    if (stop !== undefined && text === stop) {
+      return { objects, index: index + 1 };
+    }
+
+    if (text === "<<" || text === "«") {
+      const close = text === "<<" ? ">>" : "»";
+      const nested = parseObjects(tokens.slice(index + 1), close);
+      if ("code" in nested) return nested;
+      const consumed = nested.index + 1;
+      const source = tokens.slice(index, index + consumed).map((token) => token.text).join(" ");
+      objects.push({ kind: "program", body: nested.objects, source });
+      index += consumed;
+      continue;
+    }
+
+    if (text === "{") {
+      const nested = parseObjects(tokens.slice(index + 1), "}");
+      if ("code" in nested) return nested;
+      const consumed = nested.index + 1;
+      const source = tokens.slice(index, index + consumed).map((token) => token.text).join(" ");
+      objects.push({ kind: "list", items: nested.objects, source });
+      index += consumed;
+      continue;
+    }
+
+    if (text === ">>" || text === "»" || text === "}") {
+      return { code: "ParseError", message: `Unexpected delimiter: ${text}` };
+    }
+
+    if (text.startsWith("\"")) {
+      const parsed = parseString(text);
+      if ("code" in parsed) return parsed;
+      objects.push(parsed);
+      index += 1;
+      continue;
+    }
+
+    if (text.startsWith("'") && text.endsWith("'") && text.length > 2) {
+      const name = text.slice(1, -1);
+      if (!SIMPLE_NAME_PATTERN.test(name)) {
+        return { code: "InvalidToken", message: `Invalid quoted name: ${text}` };
+      }
+      objects.push({ kind: "quotedName", name, source: text });
+      index += 1;
+      continue;
+    }
+
+    if (REAL_PATTERN.test(text)) {
+      objects.push({ kind: "real", value: Number(text), source: text });
+      index += 1;
+      continue;
+    }
+
+    if (INVALID_NUMERIC_PATTERN.test(text)) {
+      return { code: "InvalidToken", message: `Invalid token: ${text}` };
+    }
+
+    objects.push({ kind: "name", name: text, source: text });
+    index += 1;
+  }
+
+  if (stop === ">>" || stop === "»") return { code: "ParseError", message: "Unterminated program" };
+  if (stop === "}") return { code: "ParseError", message: "Unterminated list" };
+  return { objects, index };
+}
+
+export function parseInput(input: string): ParseResult {
+  const tokens = lex(input);
+  if (!Array.isArray(tokens)) {
+    return { ok: false, error: tokens };
+  }
+  const parsed = parseObjects(tokens, undefined);
+  if ("code" in parsed) {
+    return { ok: false, error: parsed };
+  }
+  return { ok: true, objects: parsed.objects };
 }
 ```
 
@@ -276,12 +495,12 @@ Expected: PASS.
 
 ```bash
 git add src/types.ts src/parser.ts tests/parser.test.ts
-git commit -m "feat: add strict command parser"
+git commit -m "feat: add recursive RPL parser"
 ```
 
 ---
 
-### Task 3: Core Stack Operations
+### Task 3: Stack Operations And Object Immutability
 
 **Files:**
 - Modify: `src/types.ts`
@@ -294,50 +513,44 @@ Create `tests/core-stack.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { applyToken } from "../src/core.js";
-import type { CalculatorState, Token } from "../src/types.js";
+import { evaluateObject } from "../src/core.js";
+import type { CalculatorState, RplObject } from "../src/types.js";
 
-const real = (value: number) => ({ kind: "real" as const, value });
-const command = (name: string): Token => ({ kind: "command", name });
-const literal = (value: number): Token => ({ kind: "literal", value: real(value) });
-const state = (...values: number[]): CalculatorState => ({ stack: values.map(real) });
+const real = (value: number): RplObject => ({ kind: "real", value });
+const name = (value: string): RplObject => ({ kind: "name", name: value });
+const state = (...values: RplObject[]): CalculatorState => ({ stack: values, variables: {} });
 
 describe("core stack operations", () => {
-  it("pushes real literals onto the stack", () => {
-    expect(applyToken(state(), literal(5))).toEqual({ ok: true, state: state(5) });
+  it("pushes inert objects onto the stack", () => {
+    expect(evaluateObject(state(), real(5))).toEqual({ ok: true, state: state(real(5)) });
   });
 
-  it("duplicates the top stack value", () => {
-    expect(applyToken(state(2), command("DUP"))).toEqual({ ok: true, state: state(2, 2) });
+  it("duplicates the top stack object", () => {
+    expect(evaluateObject(state(real(2)), name("DUP"))).toEqual({ ok: true, state: state(real(2), real(2)) });
   });
 
-  it("drops the top stack value", () => {
-    expect(applyToken(state(2, 3), command("DROP"))).toEqual({ ok: true, state: state(2) });
+  it("drops the top stack object", () => {
+    expect(evaluateObject(state(real(2), real(3)), name("DROP"))).toEqual({ ok: true, state: state(real(2)) });
   });
 
-  it("swaps the top two stack values", () => {
-    expect(applyToken(state(2, 3), command("SWAP"))).toEqual({ ok: true, state: state(3, 2) });
+  it("swaps the top two stack objects", () => {
+    expect(evaluateObject(state(real(2), real(3)), name("SWAP"))).toEqual({ ok: true, state: state(real(3), real(2)) });
   });
 
-  it("copies the second stack value to the top", () => {
-    expect(applyToken(state(2, 3), command("OVER"))).toEqual({ ok: true, state: state(2, 3, 2) });
+  it("copies the second stack object to the top", () => {
+    expect(evaluateObject(state(real(2), real(3)), name("OVER"))).toEqual({ ok: true, state: state(real(2), real(3), real(2)) });
   });
 
-  it("clears the stack", () => {
-    expect(applyToken(state(2, 3), command("CLEAR"))).toEqual({ ok: true, state: state() });
-  });
-
-  it("does not mutate the original state", () => {
-    const original = state(2);
-    applyToken(original, command("DUP"));
-    expect(original).toEqual(state(2));
+  it("clears the stack without clearing variables", () => {
+    const before: CalculatorState = { stack: [real(2)], variables: { A: real(7) } };
+    expect(evaluateObject(before, name("CLEAR"))).toEqual({ ok: true, state: { stack: [], variables: { A: real(7) } } });
   });
 
   it("reports stack underflow without mutating state", () => {
-    expect(applyToken(state(), command("DROP"))).toEqual({
+    expect(evaluateObject(state(), name("DROP"))).toEqual({
       ok: false,
       state: state(),
-      error: { code: "StackUnderflow", message: "DROP requires 1 stack value" }
+      error: { code: "StackUnderflow", message: "DROP requires 1 stack object" }
     });
   });
 });
@@ -347,43 +560,19 @@ describe("core stack operations", () => {
 
 Run: `npm test -- tests/core-stack.test.ts`
 
-Expected: FAIL because `src/core.ts` does not exist.
+Expected: FAIL because `src/core.ts` and `CalculatorState` do not exist yet.
 
 - [ ] **Step 3: Implement stack core**
 
-Replace `src/types.ts` with:
+Append to `src/types.ts`:
 
 ```ts
-export type StackValue = {
-  kind: "real";
-  value: number;
-};
-
 export type CalculatorState = {
-  stack: StackValue[];
+  stack: RplObject[];
+  variables: Record<string, RplObject>;
 };
 
-export type CalculatorErrorCode =
-  | "InvalidToken"
-  | "InvalidCommand"
-  | "StackUnderflow"
-  | "DivisionByZero"
-  | "InvalidOperation";
-
-export type CalculatorError = {
-  code: CalculatorErrorCode;
-  message: string;
-};
-
-export type Token =
-  | { kind: "literal"; value: StackValue }
-  | { kind: "command"; name: string };
-
-export type ParseResult =
-  | { ok: true; tokens: Token[] }
-  | { ok: false; error: CalculatorError };
-
-export type ApplyResult =
+export type EvaluateResult =
   | { ok: true; state: CalculatorState }
   | { ok: false; state: CalculatorState; error: CalculatorError };
 ```
@@ -391,30 +580,42 @@ export type ApplyResult =
 Create `src/core.ts`:
 
 ```ts
-import type { ApplyResult, CalculatorState, StackValue, Token } from "./types.js";
+import type { CalculatorState, EvaluateResult, RplObject } from "./types.js";
 
-const cloneState = (state: CalculatorState): CalculatorState => ({
-  stack: state.stack.map((value) => ({ ...value }))
+export const cloneObject = (object: RplObject): RplObject => {
+  switch (object.kind) {
+    case "program":
+      return { ...object, body: object.body.map(cloneObject) };
+    case "list":
+      return { ...object, items: object.items.map(cloneObject) };
+    default:
+      return { ...object };
+  }
+};
+
+export const cloneState = (state: CalculatorState): CalculatorState => ({
+  stack: state.stack.map(cloneObject),
+  variables: Object.fromEntries(Object.entries(state.variables).map(([key, value]) => [key, cloneObject(value)]))
 });
 
-const underflow = (state: CalculatorState, command: string, count: number): ApplyResult => ({
+const underflow = (state: CalculatorState, command: string, count: number): EvaluateResult => ({
   ok: false,
   state: cloneState(state),
-  error: { code: "StackUnderflow", message: `${command} requires ${count} stack value${count === 1 ? "" : "s"}` }
+  error: { code: "StackUnderflow", message: `${command} requires ${count} stack object${count === 1 ? "" : "s"}` }
 });
 
-export function applyToken(state: CalculatorState, token: Token): ApplyResult {
+const push = (state: CalculatorState, object: RplObject): EvaluateResult => ({
+  ok: true,
+  state: { ...cloneState(state), stack: [...state.stack.map(cloneObject), cloneObject(object)] }
+});
+
+function applyBuiltin(state: CalculatorState, name: string): EvaluateResult | undefined {
   const next = cloneState(state);
 
-  if (token.kind === "literal") {
-    next.stack.push({ ...token.value });
-    return { ok: true, state: next };
-  }
-
-  switch (token.name) {
+  switch (name) {
     case "DUP": {
       if (next.stack.length < 1) return underflow(state, "DUP", 1);
-      next.stack.push({ ...next.stack[next.stack.length - 1] });
+      next.stack.push(cloneObject(next.stack[next.stack.length - 1]));
       return { ok: true, state: next };
     }
     case "DROP": {
@@ -424,25 +625,36 @@ export function applyToken(state: CalculatorState, token: Token): ApplyResult {
     }
     case "SWAP": {
       if (next.stack.length < 2) return underflow(state, "SWAP", 2);
-      const y = next.stack.pop() as StackValue;
-      const x = next.stack.pop() as StackValue;
+      const y = next.stack.pop() as RplObject;
+      const x = next.stack.pop() as RplObject;
       next.stack.push(y, x);
       return { ok: true, state: next };
     }
     case "OVER": {
       if (next.stack.length < 2) return underflow(state, "OVER", 2);
-      next.stack.push({ ...next.stack[next.stack.length - 2] });
+      next.stack.push(cloneObject(next.stack[next.stack.length - 2]));
       return { ok: true, state: next };
     }
     case "CLEAR":
-      return { ok: true, state: { stack: [] } };
+      return { ok: true, state: { stack: [], variables: next.variables } };
     default:
-      return {
-        ok: false,
-        state: cloneState(state),
-        error: { code: "InvalidCommand", message: `Invalid command: ${token.name}` }
-      };
+      return undefined;
   }
+}
+
+export function evaluateObject(state: CalculatorState, object: RplObject): EvaluateResult {
+  if (object.kind !== "name") {
+    return push(state, object);
+  }
+
+  const builtin = applyBuiltin(state, object.name);
+  if (builtin !== undefined) return builtin;
+
+  return {
+    ok: false,
+    state: cloneState(state),
+    error: { code: "UndefinedName", message: `Undefined name: ${object.name}` }
+  };
 }
 ```
 
@@ -456,12 +668,12 @@ Expected: PASS.
 
 ```bash
 git add src/types.ts src/core.ts tests/core-stack.test.ts
-git commit -m "feat: add core stack operations"
+git commit -m "feat: add RPL stack operations"
 ```
 
 ---
 
-### Task 4: Arithmetic Commands and Atomic Errors
+### Task 4: Real Arithmetic
 
 **Files:**
 - Modify: `src/core.ts`
@@ -473,48 +685,41 @@ Create `tests/core-arithmetic.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { applyToken } from "../src/core.js";
-import type { CalculatorState, Token } from "../src/types.js";
+import { evaluateObject } from "../src/core.js";
+import type { CalculatorState, RplObject } from "../src/types.js";
 
-const real = (value: number) => ({ kind: "real" as const, value });
-const command = (name: string): Token => ({ kind: "command", name });
-const state = (...values: number[]): CalculatorState => ({ stack: values.map(real) });
+const real = (value: number): RplObject => ({ kind: "real", value });
+const name = (value: string): RplObject => ({ kind: "name", name: value });
+const state = (...values: RplObject[]): CalculatorState => ({ stack: values, variables: {} });
 
-describe("core arithmetic", () => {
+describe("core real arithmetic", () => {
   it.each([
-    ["+", state(2, 3), state(5)],
-    ["-", state(2, 3), state(-1)],
-    ["*", state(2, 3), state(6)],
-    ["/", state(2, 4), state(0.5)],
-    ["NEG", state(2), state(-2)],
-    ["INV", state(4), state(0.25)],
-    ["SQ", state(4), state(16)],
-    ["SQRT", state(9), state(3)]
-  ])("applies %s", (name, before, after) => {
-    expect(applyToken(before, command(name))).toEqual({ ok: true, state: after });
+    ["+", state(real(2), real(3)), state(real(5))],
+    ["-", state(real(2), real(3)), state(real(-1))],
+    ["*", state(real(2), real(3)), state(real(6))],
+    ["/", state(real(2), real(4)), state(real(0.5))],
+    ["NEG", state(real(2)), state(real(-2))],
+    ["INV", state(real(4)), state(real(0.25))],
+    ["SQ", state(real(4)), state(real(16))],
+    ["SQRT", state(real(9)), state(real(3))]
+  ])("applies %s", (operator, before, after) => {
+    expect(evaluateObject(before, name(operator))).toEqual({ ok: true, state: after });
   });
 
-  it("rejects division by zero without mutating the stack", () => {
-    expect(applyToken(state(2, 0), command("/"))).toEqual({
+  it("rejects non-real arithmetic inputs without mutation", () => {
+    const before = state({ kind: "string", value: "2" }, real(3));
+    expect(evaluateObject(before, name("+"))).toEqual({
       ok: false,
-      state: state(2, 0),
+      state: before,
+      error: { code: "TypeMismatch", message: "+ requires real arguments" }
+    });
+  });
+
+  it("rejects division by zero without mutation", () => {
+    expect(evaluateObject(state(real(2), real(0)), name("/"))).toEqual({
+      ok: false,
+      state: state(real(2), real(0)),
       error: { code: "DivisionByZero", message: "/ cannot divide by zero" }
-    });
-  });
-
-  it("rejects inverse of zero without mutating the stack", () => {
-    expect(applyToken(state(0), command("INV"))).toEqual({
-      ok: false,
-      state: state(0),
-      error: { code: "DivisionByZero", message: "INV cannot divide by zero" }
-    });
-  });
-
-  it("rejects square root of a negative real without mutating the stack", () => {
-    expect(applyToken(state(-1), command("SQRT"))).toEqual({
-      ok: false,
-      state: state(-1),
-      error: { code: "InvalidOperation", message: "SQRT requires a non-negative real" }
     });
   });
 });
@@ -524,87 +729,84 @@ describe("core arithmetic", () => {
 
 Run: `npm test -- tests/core-arithmetic.test.ts`
 
-Expected: FAIL because arithmetic commands are invalid.
+Expected: FAIL because arithmetic commands are not implemented.
 
-- [ ] **Step 3: Add arithmetic command handling**
+- [ ] **Step 3: Add arithmetic builtins**
 
-In `src/core.ts`, add helper functions below `underflow`:
+In `src/core.ts`, add real arithmetic helpers near `underflow` and add cases in `applyBuiltin` before `default`. Preserve existing stack command behavior.
 
 ```ts
-const real = (value: number): StackValue => ({ kind: "real", value });
+const real = (value: number): RplObject => ({ kind: "real", value });
 
-function unary(state: CalculatorState, command: string, operation: (x: number) => ApplyResult): ApplyResult {
-  if (state.stack.length < 1) return underflow(state, command, 1);
-  return operation(state.stack[state.stack.length - 1].value);
-}
-
-function binary(state: CalculatorState, command: string, operation: (x: number, y: number) => ApplyResult): ApplyResult {
-  if (state.stack.length < 2) return underflow(state, command, 2);
-  const x = state.stack[state.stack.length - 2].value;
-  const y = state.stack[state.stack.length - 1].value;
-  return operation(x, y);
-}
-
-const replaceTop = (state: CalculatorState, value: number): ApplyResult => ({
-  ok: true,
-  state: { stack: [...state.stack.slice(0, -1), real(value)] }
+const typeMismatch = (state: CalculatorState, command: string): EvaluateResult => ({
+  ok: false,
+  state: cloneState(state),
+  error: { code: "TypeMismatch", message: `${command} requires real arguments` }
 });
 
-const replaceTopTwo = (state: CalculatorState, value: number): ApplyResult => ({
+function unaryReal(state: CalculatorState, command: string, fn: (x: number) => EvaluateResult): EvaluateResult {
+  if (state.stack.length < 1) return underflow(state, command, 1);
+  const x = state.stack[state.stack.length - 1];
+  if (x.kind !== "real") return typeMismatch(state, command);
+  return fn(x.value);
+}
+
+function binaryReal(state: CalculatorState, command: string, fn: (x: number, y: number) => EvaluateResult): EvaluateResult {
+  if (state.stack.length < 2) return underflow(state, command, 2);
+  const x = state.stack[state.stack.length - 2];
+  const y = state.stack[state.stack.length - 1];
+  if (x.kind !== "real" || y.kind !== "real") return typeMismatch(state, command);
+  return fn(x.value, y.value);
+}
+
+const replaceTop = (state: CalculatorState, value: number): EvaluateResult => ({
   ok: true,
-  state: { stack: [...state.stack.slice(0, -2), real(value)] }
+  state: { ...cloneState(state), stack: [...state.stack.slice(0, -1).map(cloneObject), real(value)] }
+});
+
+const replaceTopTwo = (state: CalculatorState, value: number): EvaluateResult => ({
+  ok: true,
+  state: { ...cloneState(state), stack: [...state.stack.slice(0, -2).map(cloneObject), real(value)] }
 });
 ```
 
-Then add these cases before `default` in the existing switch:
+Add switch cases:
 
 ```ts
     case "+":
-      return binary(state, "+", (x, y) => replaceTopTwo(state, x + y));
+      return binaryReal(state, "+", (x, y) => replaceTopTwo(state, x + y));
     case "-":
-      return binary(state, "-", (x, y) => replaceTopTwo(state, x - y));
+      return binaryReal(state, "-", (x, y) => replaceTopTwo(state, x - y));
     case "*":
-      return binary(state, "*", (x, y) => replaceTopTwo(state, x * y));
+      return binaryReal(state, "*", (x, y) => replaceTopTwo(state, x * y));
     case "/":
-      return binary(state, "/", (x, y) => {
+      return binaryReal(state, "/", (x, y) => {
         if (y === 0) {
-          return {
-            ok: false,
-            state: cloneState(state),
-            error: { code: "DivisionByZero", message: "/ cannot divide by zero" }
-          };
+          return { ok: false, state: cloneState(state), error: { code: "DivisionByZero", message: "/ cannot divide by zero" } };
         }
         return replaceTopTwo(state, x / y);
       });
     case "NEG":
-      return unary(state, "NEG", (x) => replaceTop(state, -x));
+      return unaryReal(state, "NEG", (x) => replaceTop(state, -x));
     case "INV":
-      return unary(state, "INV", (x) => {
+      return unaryReal(state, "INV", (x) => {
         if (x === 0) {
-          return {
-            ok: false,
-            state: cloneState(state),
-            error: { code: "DivisionByZero", message: "INV cannot divide by zero" }
-          };
+          return { ok: false, state: cloneState(state), error: { code: "DivisionByZero", message: "INV cannot divide by zero" } };
         }
         return replaceTop(state, 1 / x);
       });
     case "SQ":
-      return unary(state, "SQ", (x) => replaceTop(state, x * x));
+      return unaryReal(state, "SQ", (x) => replaceTop(state, x * x));
     case "SQRT":
-      return unary(state, "SQRT", (x) => {
+      return unaryReal(state, "SQRT", (x) => {
         if (x < 0) {
-          return {
-            ok: false,
-            state: cloneState(state),
-            error: { code: "InvalidOperation", message: "SQRT requires a non-negative real" }
-          };
+          return { ok: false, state: cloneState(state), error: { code: "InvalidOperation", message: "SQRT requires a non-negative real" } };
         }
         return replaceTop(state, Math.sqrt(x));
       });
 ```
 
-- [ ] **Step 4: Run arithmetic and stack tests**
+- [ ] **Step 4: Run stack and arithmetic tests**
 
 Run: `npm test -- tests/core-stack.test.ts tests/core-arithmetic.test.ts`
 
@@ -614,12 +816,163 @@ Expected: PASS.
 
 ```bash
 git add src/core.ts tests/core-arithmetic.test.ts
-git commit -m "feat: add real arithmetic commands"
+git commit -m "feat: add real arithmetic builtins"
 ```
 
 ---
 
-### Task 5: Persistent Session and Trace
+### Task 5: Programs, EVAL, STO, And Global Names
+
+**Files:**
+- Modify: `src/core.ts`
+- Create: `tests/core-eval.test.ts`
+
+- [ ] **Step 1: Write evaluator tests**
+
+Create `tests/core-eval.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { evaluateObject } from "../src/core.js";
+import type { CalculatorState, RplObject } from "../src/types.js";
+
+const real = (value: number): RplObject => ({ kind: "real", value });
+const name = (value: string): RplObject => ({ kind: "name", name: value });
+const quotedName = (value: string): RplObject => ({ kind: "quotedName", name: value });
+const program = (...body: RplObject[]): RplObject => ({ kind: "program", body });
+const state = (...values: RplObject[]): CalculatorState => ({ stack: values, variables: {} });
+
+describe("RPL evaluator", () => {
+  it("pushes program objects without executing them", () => {
+    const object = program(real(2), real(3), name("+"));
+    expect(evaluateObject(state(), object)).toEqual({ ok: true, state: state(object) });
+  });
+
+  it("EVAL executes a program object from level 1", () => {
+    expect(evaluateObject(state(program(real(2), real(3), name("+"))), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(real(5))
+    });
+  });
+
+  it("stores objects under quoted global names", () => {
+    expect(evaluateObject(state(real(5), quotedName("A")), name("STO"))).toEqual({
+      ok: true,
+      state: { stack: [], variables: { A: real(5) } }
+    });
+  });
+
+  it("evaluates non-program global names by pushing their value", () => {
+    const before: CalculatorState = { stack: [], variables: { A: real(5) } };
+    expect(evaluateObject(before, name("A"))).toEqual({
+      ok: true,
+      state: { stack: [real(5)], variables: { A: real(5) } }
+    });
+  });
+
+  it("evaluates program global names by executing the program", () => {
+    const before: CalculatorState = { stack: [real(41)], variables: { INC: program(real(1), name("+")) } };
+    expect(evaluateObject(before, name("INC"))).toEqual({
+      ok: true,
+      state: { stack: [real(42)], variables: { INC: program(real(1), name("+")) } }
+    });
+  });
+
+  it("keeps nested programs inert until EVAL", () => {
+    const nested = program(real(1), real(2), name("+"));
+    expect(evaluateObject(state(program(nested)), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(nested)
+    });
+  });
+});
+```
+
+- [ ] **Step 2: Run evaluator tests to verify they fail**
+
+Run: `npm test -- tests/core-eval.test.ts`
+
+Expected: FAIL because `EVAL`, `STO`, and global name lookup are not implemented.
+
+- [ ] **Step 3: Implement evaluator semantics**
+
+In `src/core.ts`, add:
+
+```ts
+function evaluateProgram(state: CalculatorState, program: Extract<RplObject, { kind: "program" }>): EvaluateResult {
+  let current = cloneState(state);
+  for (const object of program.body) {
+    const result = evaluateObject(current, object);
+    current = result.state;
+    if (!result.ok) return result;
+  }
+  return { ok: true, state: current };
+}
+```
+
+Add `EVAL` and `STO` cases in `applyBuiltin` before arithmetic cases or before `default`:
+
+```ts
+    case "EVAL": {
+      if (next.stack.length < 1) return underflow(state, "EVAL", 1);
+      const object = next.stack.pop() as RplObject;
+      if (object.kind === "program") {
+        return evaluateProgram(next, object);
+      }
+      return evaluateObject(next, object);
+    }
+    case "STO": {
+      if (next.stack.length < 2) return underflow(state, "STO", 2);
+      const target = next.stack[next.stack.length - 1];
+      const value = next.stack[next.stack.length - 2];
+      if (target.kind !== "quotedName") {
+        return {
+          ok: false,
+          state: cloneState(state),
+          error: { code: "TypeMismatch", message: "STO requires a quoted name in level 1" }
+        };
+      }
+      next.stack.pop();
+      next.stack.pop();
+      next.variables[target.name] = cloneObject(value);
+      return { ok: true, state: next };
+    }
+```
+
+Replace the undefined-name tail of `evaluateObject` with:
+
+```ts
+  const variable = state.variables[object.name];
+  if (variable !== undefined) {
+    if (variable.kind === "program") {
+      return evaluateProgram(state, variable);
+    }
+    return push(state, variable);
+  }
+
+  return {
+    ok: false,
+    state: cloneState(state),
+    error: { code: "UndefinedName", message: `Undefined name: ${object.name}` }
+  };
+```
+
+- [ ] **Step 4: Run core tests**
+
+Run: `npm test -- tests/core-stack.test.ts tests/core-arithmetic.test.ts tests/core-eval.test.ts`
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/core.ts tests/core-eval.test.ts
+git commit -m "feat: add RPL program and variable evaluation"
+```
+
+---
+
+### Task 6: Persistent Session And Trace
 
 **Files:**
 - Modify: `src/types.ts`
@@ -635,45 +988,38 @@ import { describe, expect, it } from "vitest";
 import { CalculatorSession } from "../src/session.js";
 
 describe("CalculatorSession", () => {
-  it("persists stack state across execute calls", () => {
+  it("persists stack and variables across execute calls", () => {
     const session = new CalculatorSession();
-    expect(session.execute("2 3 +")).toMatchObject({ ok: true });
-    expect(session.execute("DUP")).toMatchObject({ ok: true });
-    expect(session.getStack()).toEqual([
-      { level: 2, value: { kind: "real", value: 5 } },
-      { level: 1, value: { kind: "real", value: 5 } }
-    ]);
+    expect(session.execute("<< 1 + >> 'INC' STO")).toMatchObject({ ok: true });
+    expect(session.execute("41 INC")).toMatchObject({ ok: true });
+    expect(session.getStack()).toEqual([{ level: 1, value: { kind: "real", value: 42 } }]);
+    expect(session.getVariables()).toEqual({ INC: { kind: "program", body: [{ kind: "real", value: 1, source: "1" }, { kind: "name", name: "+", source: "+" }], source: "<< 1 + >>" } });
   });
 
-  it("stops execution on the first failing token and keeps prior successful tokens", () => {
+  it("records trace entries and stops on the first failing object", () => {
     const session = new CalculatorSession();
     const result = session.execute("2 0 / 9");
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       ok: false,
       error: { code: "DivisionByZero", message: "/ cannot divide by zero" },
       stack: [
-        { level: 2, value: { kind: "real", value: 2 } },
-        { level: 1, value: { kind: "real", value: 0 } }
-      ],
-      trace: [
-        { token: "2", ok: true, before: [], after: [{ kind: "real", value: 2 }] },
-        { token: "0", ok: true, before: [{ kind: "real", value: 2 }], after: [{ kind: "real", value: 2 }, { kind: "real", value: 0 }] },
-        {
-          token: "/",
-          ok: false,
-          before: [{ kind: "real", value: 2 }, { kind: "real", value: 0 }],
-          after: [{ kind: "real", value: 2 }, { kind: "real", value: 0 }],
-          error: { code: "DivisionByZero", message: "/ cannot divide by zero" }
-        }
+        { level: 2, value: { kind: "real", value: 2, source: "2" } },
+        { level: 1, value: { kind: "real", value: 0, source: "0" } }
       ]
     });
+    expect(result.trace.map((entry) => ({ source: entry.source, ok: entry.ok }))).toEqual([
+      { source: "2", ok: true },
+      { source: "0", ok: true },
+      { source: "/", ok: false }
+    ]);
   });
 
-  it("clears stack and trace", () => {
+  it("clears stack, variables, and trace", () => {
     const session = new CalculatorSession();
-    session.execute("2 3 +");
+    session.execute("5 'A' STO A");
     session.clear();
     expect(session.getStack()).toEqual([]);
+    expect(session.getVariables()).toEqual({});
     expect(session.getTrace()).toEqual([]);
   });
 });
@@ -692,32 +1038,29 @@ Append to `src/types.ts`:
 ```ts
 export type StackEntry = {
   level: number;
-  value: StackValue;
+  value: RplObject;
 };
 
 export type TraceEntry =
-  | { token: string; ok: true; before: StackValue[]; after: StackValue[] }
-  | { token: string; ok: false; before: StackValue[]; after: StackValue[]; error: CalculatorError };
+  | { source: string; ok: true; before: RplObject[]; after: RplObject[] }
+  | { source: string; ok: false; before: RplObject[]; after: RplObject[]; error: CalculatorError };
 
 export type ExecuteResult =
-  | { ok: true; stack: StackEntry[]; trace: TraceEntry[] }
-  | { ok: false; error: CalculatorError; stack: StackEntry[]; trace: TraceEntry[] };
+  | { ok: true; stack: StackEntry[]; variables: Record<string, RplObject>; trace: TraceEntry[] }
+  | { ok: false; error: CalculatorError; stack: StackEntry[]; variables: Record<string, RplObject>; trace: TraceEntry[] };
 ```
 
 Create `src/session.ts`:
 
 ```ts
-import { applyToken } from "./core.js";
+import { cloneObject, cloneState, evaluateObject } from "./core.js";
 import { parseInput } from "./parser.js";
-import type { CalculatorState, ExecuteResult, StackEntry, StackValue, TraceEntry } from "./types.js";
+import type { CalculatorState, ExecuteResult, RplObject, StackEntry, TraceEntry } from "./types.js";
 
-const cloneStack = (stack: StackValue[]): StackValue[] => stack.map((value) => ({ ...value }));
-
-const tokenLabel = (token: { kind: "literal"; value: StackValue } | { kind: "command"; name: string }): string =>
-  token.kind === "literal" ? String(token.value.value) : token.name;
+const sourceOf = (object: RplObject): string => object.source ?? object.kind;
 
 export class CalculatorSession {
-  private state: CalculatorState = { stack: [] };
+  private state: CalculatorState = { stack: [], variables: {} };
   private trace: TraceEntry[] = [];
 
   execute(input: string): ExecuteResult {
@@ -725,42 +1068,47 @@ export class CalculatorSession {
     this.trace = [];
 
     if (!parsed.ok) {
-      return { ok: false, error: parsed.error, stack: this.getStack(), trace: this.trace };
+      return { ok: false, error: parsed.error, stack: this.getStack(), variables: this.getVariables(), trace: this.getTrace() };
     }
 
-    for (const token of parsed.tokens) {
-      const before = cloneStack(this.state.stack);
-      const result = applyToken(this.state, token);
+    for (const object of parsed.objects) {
+      const before = this.state.stack.map(cloneObject);
+      const result = evaluateObject(this.state, object);
       this.state = result.state;
-      const after = cloneStack(this.state.stack);
+      const after = this.state.stack.map(cloneObject);
 
       if (!result.ok) {
-        this.trace.push({ token: tokenLabel(token), ok: false, before, after, error: result.error });
-        return { ok: false, error: result.error, stack: this.getStack(), trace: this.getTrace() };
+        this.trace.push({ source: sourceOf(object), ok: false, before, after, error: result.error });
+        return { ok: false, error: result.error, stack: this.getStack(), variables: this.getVariables(), trace: this.getTrace() };
       }
 
-      this.trace.push({ token: tokenLabel(token), ok: true, before, after });
+      this.trace.push({ source: sourceOf(object), ok: true, before, after });
     }
 
-    return { ok: true, stack: this.getStack(), trace: this.getTrace() };
+    return { ok: true, stack: this.getStack(), variables: this.getVariables(), trace: this.getTrace() };
   }
 
   getStack(): StackEntry[] {
-    return this.state.stack
-      .map((value, index, values) => ({ level: values.length - index, value: { ...value } }))
-      .reverse();
+    return this.state.stack.map((value, index, values) => ({
+      level: values.length - index,
+      value: cloneObject(value)
+    }));
+  }
+
+  getVariables(): Record<string, RplObject> {
+    return cloneState(this.state).variables;
   }
 
   getTrace(): TraceEntry[] {
     return this.trace.map((entry) => ({
       ...entry,
-      before: cloneStack(entry.before),
-      after: cloneStack(entry.after)
+      before: entry.before.map(cloneObject),
+      after: entry.after.map(cloneObject)
     }));
   }
 
   clear(): void {
-    this.state = { stack: [] };
+    this.state = { stack: [], variables: {} };
     this.trace = [];
   }
 }
@@ -776,61 +1124,56 @@ Expected: PASS.
 
 ```bash
 git add src/types.ts src/session.ts tests/session.test.ts
-git commit -m "feat: add persistent calculator session"
+git commit -m "feat: add persistent RPL session"
 ```
 
 ---
 
-### Task 6: Manual-Style Conformance Fixtures
+### Task 7: RPL Identity Conformance And README
 
 **Files:**
-- Create: `tests/conformance/manual-basic.test.ts`
+- Create: `tests/conformance/rpl-identity.test.ts`
 - Create: `README.md`
 
-- [ ] **Step 1: Write conformance tests**
+- [ ] **Step 1: Write RPL identity tests**
 
-Create `tests/conformance/manual-basic.test.ts`:
+Create `tests/conformance/rpl-identity.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
 import { CalculatorSession } from "../../src/session.js";
 
-type ManualExample = {
-  source: string;
-  input: string;
-  expectedStack: Array<{ level: number; value: { kind: "real"; value: number } }>;
-};
-
-const examples: ManualExample[] = [
-  {
-    source: "Project seed example: basic RPN addition",
-    input: "2 3 +",
-    expectedStack: [{ level: 1, value: { kind: "real", value: 5 } }]
-  },
-  {
-    source: "Project seed example: stack duplication and square",
-    input: "4 DUP SQ",
-    expectedStack: [
-      { level: 2, value: { kind: "real", value: 4 } },
-      { level: 1, value: { kind: "real", value: 16 } }
+describe("RPL identity examples", () => {
+  it.each([
+    ["real arithmetic", "2 3 +", [{ level: 1, value: { kind: "real", value: 5 } }]],
+    ["program object evaluation", "<< 2 3 + >> EVAL", [{ level: 1, value: { kind: "real", value: 5 } }]],
+    [
+      "stored increment program",
+      "<< 1 + >> 'INC' STO 41 INC",
+      [{ level: 1, value: { kind: "real", value: 42 } }]
     ]
-  }
-];
-
-describe("manual-style conformance examples", () => {
-  it.each(examples)("$source", ({ input, expectedStack }) => {
+  ])("%s", (_label, input, expectedStack) => {
     const session = new CalculatorSession();
     expect(session.execute(input)).toMatchObject({ ok: true });
-    expect(session.getStack()).toEqual(expectedStack);
+    expect(session.getStack()).toMatchObject(expectedStack);
+  });
+
+  it("treats lists as inert first-class objects", () => {
+    const session = new CalculatorSession();
+    expect(session.execute("{ 1 2 3 } DUP")).toMatchObject({ ok: true });
+    expect(session.getStack()).toEqual([
+      { level: 2, value: { kind: "list", items: [{ kind: "real", value: 1, source: "1" }, { kind: "real", value: 2, source: "2" }, { kind: "real", value: 3, source: "3" }], source: "{ 1 2 3 }" } },
+      { level: 1, value: { kind: "list", items: [{ kind: "real", value: 1, source: "1" }, { kind: "real", value: 2, source: "2" }, { kind: "real", value: 3, source: "3" }], source: "{ 1 2 3 }" } }
+    ]);
   });
 });
 ```
 
-- [ ] **Step 2: Run conformance tests to verify they pass against current behavior**
+- [ ] **Step 2: Run conformance tests**
 
-Run: `npm test -- tests/conformance/manual-basic.test.ts`
+Run: `npm test -- tests/conformance/rpl-identity.test.ts`
 
-Expected: PASS. This task adds the conformance harness using seed examples. Future manual examples should be added as new fixture entries with chapter, section, and page labels.
+Expected: PASS.
 
 - [ ] **Step 3: Add README**
 
@@ -839,9 +1182,9 @@ Create `README.md`:
 ```md
 # rpn50
 
-`rpn50` is a clean-room HP 50g-inspired RPN calculator engine with a persistent stack and an MCP interface.
+`rpn50` is a clean-room User RPL-inspired calculator engine with a persistent object stack and an MCP interface.
 
-It is not a ROM emulator and does not execute HP firmware. The goal is manual-compatible behavior for selected user-visible features, starting with real-number RPN arithmetic.
+It is not an HP ROM emulator and does not execute HP firmware. The goal is to build a small Reverse Polish Lisp-style runtime with typed objects, executable programs, variables, and traceable stack evaluation.
 
 ## Commands
 
@@ -852,18 +1195,20 @@ It is not a ROM emulator and does not execute HP firmware. The goal is manual-co
 
 ## Milestone 1 Scope
 
-- Real-number stack.
+- RPL objects: real numbers, bare names, quoted names, programs, lists, and strings.
 - Stack commands: `DUP`, `DROP`, `SWAP`, `OVER`, `CLEAR`.
 - Arithmetic commands: `+`, `-`, `*`, `/`, `NEG`, `INV`, `SQ`, `SQRT`.
+- Program evaluation through `EVAL`.
+- Global variables through `STO`.
 - Persistent calculator session.
-- MCP tools: `execute`, `get_stack`, `clear`, `get_trace`.
+- MCP tools: `execute`, `get_stack`, `get_variables`, `clear`, `get_trace`.
 
 ## Clean-Room Rule
 
-Use public manuals and observable behavior as specifications. Do not copy HP ROM code, firmware internals, or proprietary emulator implementation details.
+Use public manuals and observable behavior as references. Do not copy HP ROM code, firmware internals, System RPL memory behavior, or proprietary emulator implementation details.
 ```
 
-- [ ] **Step 4: Run all tests**
+- [ ] **Step 4: Run all current tests**
 
 Run: `npm test`
 
@@ -872,13 +1217,13 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/conformance/manual-basic.test.ts README.md
-git commit -m "test: add manual-style conformance harness"
+git add tests/conformance/rpl-identity.test.ts README.md
+git commit -m "test: add RPL identity conformance examples"
 ```
 
 ---
 
-### Task 7: MCP Server Tool Handlers
+### Task 8: MCP Server Tool Handlers
 
 **Files:**
 - Create: `src/mcp/server.ts`
@@ -891,27 +1236,27 @@ Create `tests/mcp-server.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createCalculatorTools } from "../src/mcp/server.js";
+import { createCalculatorTools, createServer } from "../src/mcp/server.js";
 
 describe("MCP calculator tool handlers", () => {
-  it("executes commands against one persistent session", async () => {
+  it("executes commands against one persistent RPL session", async () => {
     const tools = createCalculatorTools();
-    expect(await tools.execute({ input: "2 3 +" })).toMatchObject({ ok: true });
-    expect(await tools.execute({ input: "DUP" })).toMatchObject({ ok: true });
-    expect(await tools.get_stack({})).toEqual({
-      stack: [
-        { level: 2, value: { kind: "real", value: 5 } },
-        { level: 1, value: { kind: "real", value: 5 } }
-      ]
-    });
+    expect(await tools.execute({ input: "<< 1 + >> 'INC' STO" })).toMatchObject({ ok: true });
+    expect(await tools.execute({ input: "41 INC" })).toMatchObject({ ok: true });
+    expect(await tools.get_stack({})).toEqual({ stack: [{ level: 1, value: { kind: "real", value: 42 } }] });
   });
 
-  it("clears stack and trace through the tool surface", async () => {
+  it("clears stack, variables, and trace through the tool surface", async () => {
     const tools = createCalculatorTools();
-    await tools.execute({ input: "2 3 +" });
+    await tools.execute({ input: "5 'A' STO A" });
     await tools.clear({});
     expect(await tools.get_stack({})).toEqual({ stack: [] });
+    expect(await tools.get_variables({})).toEqual({ variables: {} });
     expect(await tools.get_trace({})).toEqual({ trace: [] });
+  });
+
+  it("creates an MCP server instance", () => {
+    expect(createServer()).toBeDefined();
   });
 });
 ```
@@ -936,6 +1281,7 @@ export function createCalculatorTools(session = new CalculatorSession()) {
   return {
     execute: async ({ input }: { input: string }) => session.execute(input),
     get_stack: async (_args: Record<string, never>) => ({ stack: session.getStack() }),
+    get_variables: async (_args: Record<string, never>) => ({ variables: session.getVariables() }),
     clear: async (_args: Record<string, never>) => {
       session.clear();
       return { ok: true };
@@ -954,6 +1300,10 @@ export function createServer(session = new CalculatorSession()): McpServer {
 
   server.tool("get_stack", {}, async (args) => ({
     content: [{ type: "text", text: JSON.stringify(await tools.get_stack(args), null, 2) }]
+  }));
+
+  server.tool("get_variables", {}, async (args) => ({
+    content: [{ type: "text", text: JSON.stringify(await tools.get_variables(args), null, 2) }]
   }));
 
   server.tool("clear", {}, async (args) => ({
@@ -994,12 +1344,12 @@ Expected: PASS.
 
 ```bash
 git add src/mcp/server.ts tests/mcp-server.test.ts package.json
-git commit -m "feat: expose calculator through MCP tools"
+git commit -m "feat: expose RPL session through MCP tools"
 ```
 
 ---
 
-### Task 8: Final Verification
+### Task 9: Final Verification
 
 **Files:**
 - No file changes expected unless verification exposes defects.
@@ -1020,18 +1370,19 @@ Expected: PASS.
 
 Run: `npm run build`
 
-Expected: PASS and compiled files appear under `dist/`.
+Expected: PASS and compiled files appear under `dist/`, which is ignored by `.gitignore`.
 
 - [ ] **Step 4: Inspect git status**
 
 Run: `git status --short`
 
-Expected: no uncommitted source changes except generated `dist/` if the project does not ignore it. If `dist/` appears, add a `.gitignore` containing `dist/` and commit it with message `chore: ignore build output`.
+Expected: no uncommitted source changes except unrelated files that existed before implementation.
 
 ---
 
 ## Self-Review
 
-- Spec coverage: Tasks cover TypeScript setup, parser, real-number stack, stack commands, arithmetic commands, persistent session, trace, conformance harness, MCP tools, README, and final verification. Deferred GUI, symbolic, exact arithmetic, units, matrices, and multi-session support remain out of scope as specified.
-- Placeholder scan: The plan contains concrete commands, file paths, test bodies, and implementation snippets. The conformance task uses explicit seed examples and defines how future manual references should be added.
-- Type consistency: Shared types flow from `StackValue` to `CalculatorState`, `Token`, `ApplyResult`, `ExecuteResult`, and MCP handler return values. Function names are consistent across tests and implementation steps.
+- Spec coverage: Tasks cover tooling, recursive object parsing, stack operations, real arithmetic, program objects, `EVAL`, `STO`, global names, lists as inert objects, strings as inert objects, session persistence, trace, conformance examples, MCP tools, README, and final verification.
+- Deferred scope: Local variables, CAS, algebraics, complex numbers, units, directories, flags, UI behavior, System RPL, and ROM compatibility remain out of scope.
+- Placeholder scan: The plan contains concrete commands, file paths, test bodies, implementation snippets, and commit messages.
+- Type consistency: `RplObject`, `CalculatorState`, `EvaluateResult`, `ExecuteResult`, stack entries, trace entries, and MCP handler return values are used consistently across tasks.
