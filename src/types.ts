@@ -43,6 +43,8 @@ export type TraceEntry =
   | { source: string; ok: true; before: RplObject[]; after: RplObject[] }
   | { source: string; ok: false; before: RplObject[]; after: RplObject[]; error: CalculatorError };
 
+export type EvaluationObserver = (entry: TraceEntry) => void;
+
 export type ExecuteResult =
   | { ok: true; stack: StackEntry[]; variables: Record<string, RplObject>; trace: TraceEntry[] }
   | { ok: false; error: CalculatorError; stack: StackEntry[]; variables: Record<string, RplObject>; trace: TraceEntry[] };

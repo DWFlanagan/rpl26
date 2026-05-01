@@ -1,4 +1,4 @@
-import type { CalculatorState, EvaluateResult, RplObject } from "./types.js";
+import type { CalculatorState, EvaluateResult, EvaluationObserver, RplObject } from "./types.js";
 
 export const cloneObject = (object: RplObject): RplObject => {
   switch (object.kind) {
@@ -23,6 +23,8 @@ const underflow = (state: CalculatorState, command: string, count: number): Eval
 });
 
 const real = (value: number): RplObject => ({ kind: "real", value });
+
+const sourceOf = (object: RplObject): string => object.source ?? object.kind;
 
 const typeMismatch = (state: CalculatorState, command: string): EvaluateResult => ({
   ok: false,
@@ -60,17 +62,29 @@ function binaryReal(state: CalculatorState, command: string, fn: (x: number, y: 
   return fn(x.value, y.value);
 }
 
-function evaluateProgram(state: CalculatorState, program: Extract<RplObject, { kind: "program" }>): EvaluateResult {
+function evaluateProgram(
+  state: CalculatorState,
+  program: Extract<RplObject, { kind: "program" }>,
+  observer?: EvaluationObserver
+): EvaluateResult {
   let current = cloneState(state);
   for (const object of program.body) {
-    const result = evaluateObject(current, object);
+    const before = current.stack.map(cloneObject);
+    const result = evaluateObject(current, object, observer);
     current = result.state;
-    if (!result.ok) return { ...result, state: cloneState(state) };
+    const after = current.stack.map(cloneObject);
+
+    if (!result.ok) {
+      observer?.({ source: sourceOf(object), ok: false, before, after, error: result.error });
+      return { ...result, state: cloneState(state) };
+    }
+
+    observer?.({ source: sourceOf(object), ok: true, before, after });
   }
   return { ok: true, state: current };
 }
 
-function applyBuiltin(state: CalculatorState, name: string): EvaluateResult | undefined {
+function applyBuiltin(state: CalculatorState, name: string, observer?: EvaluationObserver): EvaluateResult | undefined {
   const next = cloneState(state);
 
   switch (name) {
@@ -78,11 +92,11 @@ function applyBuiltin(state: CalculatorState, name: string): EvaluateResult | un
       if (next.stack.length < 1) return underflow(state, "EVAL", 1);
       const object = next.stack.pop() as RplObject;
       if (object.kind === "program") {
-        const result = evaluateProgram(next, object);
+        const result = evaluateProgram(next, object, observer);
         if (!result.ok) return { ...result, state: cloneState(state) };
         return result;
       }
-      return evaluateObject(next, object);
+      return evaluateObject(next, object, observer);
     }
     case "STO": {
       if (next.stack.length < 2) return underflow(state, "STO", 2);
@@ -172,18 +186,18 @@ function applyBuiltin(state: CalculatorState, name: string): EvaluateResult | un
   }
 }
 
-export function evaluateObject(state: CalculatorState, object: RplObject): EvaluateResult {
+export function evaluateObject(state: CalculatorState, object: RplObject, observer?: EvaluationObserver): EvaluateResult {
   if (object.kind !== "name") {
     return push(state, object);
   }
 
-  const builtin = applyBuiltin(state, object.name);
+  const builtin = applyBuiltin(state, object.name, observer);
   if (builtin !== undefined) return builtin;
 
   const variable = state.variables[object.name];
   if (variable !== undefined) {
     if (variable.kind === "program") {
-      return evaluateProgram(state, variable);
+      return evaluateProgram(state, variable, observer);
     }
     return push(state, variable);
   }

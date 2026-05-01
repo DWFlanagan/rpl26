@@ -47,6 +47,32 @@ describe("CalculatorSession", () => {
     ]);
   });
 
+  it("records trace entries for program-body objects evaluated by EVAL", () => {
+    const session = new CalculatorSession();
+    const result = session.execute("<< 2 3 + >> EVAL");
+    expect(result).toMatchObject({ ok: true });
+    expect(result.trace.map((entry) => ({ source: entry.source, ok: entry.ok }))).toEqual([
+      { source: "<< 2 3 + >>", ok: true },
+      { source: "2", ok: true },
+      { source: "3", ok: true },
+      { source: "+", ok: true },
+      { source: "EVAL", ok: true }
+    ]);
+  });
+
+  it("records trace entries for stored program-body objects", () => {
+    const session = new CalculatorSession();
+    expect(session.execute("<< 1 + >> 'INC' STO")).toMatchObject({ ok: true });
+    const result = session.execute("41 INC");
+    expect(result).toMatchObject({ ok: true });
+    expect(result.trace.map((entry) => ({ source: entry.source, ok: entry.ok }))).toEqual([
+      { source: "41", ok: true },
+      { source: "1", ok: true },
+      { source: "+", ok: true },
+      { source: "INC", ok: true }
+    ]);
+  });
+
   it("clears stack, variables, and trace", () => {
     const session = new CalculatorSession();
     session.execute("5 'A' STO A");

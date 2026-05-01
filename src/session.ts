@@ -18,7 +18,9 @@ export class CalculatorSession {
 
     for (const object of parsed.objects) {
       const before = this.state.stack.map(cloneObject);
-      const result = evaluateObject(this.state, object);
+      const result = evaluateObject(this.state, object, (entry) => {
+        this.trace.push(entry);
+      });
       this.state = result.state;
       const after = this.state.stack.map(cloneObject);
 
