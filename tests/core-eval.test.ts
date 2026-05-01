@@ -52,6 +52,29 @@ describe("RPL evaluator", () => {
     });
   });
 
+  it("leaves the original state unchanged when EVALed program storage fails later", () => {
+    const object = program(real(1), quotedName("B"), name("STO"), name("MISSING"));
+    const before = state(object);
+    expect(evaluateObject(before, name("EVAL"))).toEqual({
+      ok: false,
+      state: before,
+      error: { code: "UndefinedName", message: "Undefined name: MISSING" }
+    });
+  });
+
+  it("leaves the caller state unchanged when stored program storage fails later", () => {
+    const failingProgram = program(real(1), quotedName("B"), name("STO"), name("MISSING"));
+    const before: CalculatorState = {
+      stack: [real(10)],
+      variables: { A: real(7), FAIL: failingProgram }
+    };
+    expect(evaluateObject(before, name("FAIL"))).toEqual({
+      ok: false,
+      state: before,
+      error: { code: "UndefinedName", message: "Undefined name: MISSING" }
+    });
+  });
+
   it("reports unknown non-command non-variable names", () => {
     expect(evaluateObject(state(), name("MISSING"))).toEqual({
       ok: false,

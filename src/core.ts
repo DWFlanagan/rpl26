@@ -65,7 +65,7 @@ function evaluateProgram(state: CalculatorState, program: Extract<RplObject, { k
   for (const object of program.body) {
     const result = evaluateObject(current, object);
     current = result.state;
-    if (!result.ok) return result;
+    if (!result.ok) return { ...result, state: cloneState(state) };
   }
   return { ok: true, state: current };
 }
@@ -78,7 +78,9 @@ function applyBuiltin(state: CalculatorState, name: string): EvaluateResult | un
       if (next.stack.length < 1) return underflow(state, "EVAL", 1);
       const object = next.stack.pop() as RplObject;
       if (object.kind === "program") {
-        return evaluateProgram(next, object);
+        const result = evaluateProgram(next, object);
+        if (!result.ok) return { ...result, state: cloneState(state) };
+        return result;
       }
       return evaluateObject(next, object);
     }
