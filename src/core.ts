@@ -60,10 +60,44 @@ function binaryReal(state: CalculatorState, command: string, fn: (x: number, y: 
   return fn(x.value, y.value);
 }
 
+function evaluateProgram(state: CalculatorState, program: Extract<RplObject, { kind: "program" }>): EvaluateResult {
+  let current = cloneState(state);
+  for (const object of program.body) {
+    const result = evaluateObject(current, object);
+    current = result.state;
+    if (!result.ok) return result;
+  }
+  return { ok: true, state: current };
+}
+
 function applyBuiltin(state: CalculatorState, name: string): EvaluateResult | undefined {
   const next = cloneState(state);
 
   switch (name) {
+    case "EVAL": {
+      if (next.stack.length < 1) return underflow(state, "EVAL", 1);
+      const object = next.stack.pop() as RplObject;
+      if (object.kind === "program") {
+        return evaluateProgram(next, object);
+      }
+      return evaluateObject(next, object);
+    }
+    case "STO": {
+      if (next.stack.length < 2) return underflow(state, "STO", 2);
+      const target = next.stack[next.stack.length - 1];
+      const value = next.stack[next.stack.length - 2];
+      if (target.kind !== "quotedName") {
+        return {
+          ok: false,
+          state: cloneState(state),
+          error: { code: "TypeMismatch", message: "STO requires a quoted name in level 1" }
+        };
+      }
+      next.stack.pop();
+      next.stack.pop();
+      next.variables[target.name] = cloneObject(value);
+      return { ok: true, state: next };
+    }
     case "+":
       return binaryReal(state, "+", (x, y) => replaceTopTwo(state, x + y));
     case "-":
@@ -143,6 +177,14 @@ export function evaluateObject(state: CalculatorState, object: RplObject): Evalu
 
   const builtin = applyBuiltin(state, object.name);
   if (builtin !== undefined) return builtin;
+
+  const variable = state.variables[object.name];
+  if (variable !== undefined) {
+    if (variable.kind === "program") {
+      return evaluateProgram(state, variable);
+    }
+    return push(state, variable);
+  }
 
   return {
     ok: false,
