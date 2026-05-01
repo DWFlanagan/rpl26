@@ -33,3 +33,16 @@ export type CalculatorState = {
 export type EvaluateResult =
   | { ok: true; state: CalculatorState }
   | { ok: false; state: CalculatorState; error: CalculatorError };
+
+export type StackEntry = {
+  level: number;
+  value: RplObject;
+};
+
+export type TraceEntry =
+  | { source: string; ok: true; before: RplObject[]; after: RplObject[] }
+  | { source: string; ok: false; before: RplObject[]; after: RplObject[]; error: CalculatorError };
+
+export type ExecuteResult =
+  | { ok: true; stack: StackEntry[]; variables: Record<string, RplObject>; trace: TraceEntry[] }
+  | { ok: false; error: CalculatorError; stack: StackEntry[]; variables: Record<string, RplObject>; trace: TraceEntry[] };
