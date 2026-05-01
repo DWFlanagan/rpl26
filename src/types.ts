@@ -24,3 +24,12 @@ export type RplObject =
 export type ParseResult =
   | { ok: true; objects: RplObject[] }
   | { ok: false; error: CalculatorError };
+
+export type CalculatorState = {
+  stack: RplObject[];
+  variables: Record<string, RplObject>;
+};
+
+export type EvaluateResult =
+  | { ok: true; state: CalculatorState }
+  | { ok: false; state: CalculatorState; error: CalculatorError };
