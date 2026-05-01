@@ -1,0 +1,22 @@
+{
+  "name": "rpn50",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Clean-room User RPL-inspired persistent object-stack calculator with MCP access.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "mcp": "node dist/src/mcp/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
