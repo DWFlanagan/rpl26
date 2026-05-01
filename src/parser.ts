@@ -1,7 +1,7 @@
 import type { CalculatorError, ParseResult, RplObject } from "./types.js";
 
 const REAL_PATTERN = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
-const INVALID_NUMERIC_PATTERN = /^[+-]?[.\d]+(?:[eE][+-]?\d*)?$/;
+const INVALID_NUMERIC_PATTERN = /^[+-]?[.\d]+(?:[eE][+-]?[.\d]*)?$/;
 const SIMPLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 type LexToken = { text: string };
@@ -37,6 +37,7 @@ function lex(input: string): LexToken[] | CalculatorError {
 
     if (char === "\"") {
       let text = "\"";
+      let closed = false;
       index += 1;
       while (index < input.length) {
         const current = input[index];
@@ -48,11 +49,12 @@ function lex(input: string): LexToken[] | CalculatorError {
           continue;
         }
         if (current === "\"") {
+          closed = true;
           tokens.push({ text });
           break;
         }
       }
-      if (!text.endsWith("\"")) {
+      if (!closed) {
         return { code: "ParseError", message: "Unterminated string" };
       }
       continue;
@@ -158,7 +160,11 @@ function parseObjects(
     }
 
     if (REAL_PATTERN.test(text)) {
-      objects.push({ kind: "real", value: Number(text), source: text });
+      const value = Number(text);
+      if (!Number.isFinite(value)) {
+        return { code: "InvalidToken", message: `Invalid token: ${text}` };
+      }
+      objects.push({ kind: "real", value, source: text });
       index += 1;
       continue;
     }

@@ -53,6 +53,34 @@ describe("parseInput", () => {
     });
   });
 
+  it("rejects unterminated strings", () => {
+    expect(parseInput('"')).toEqual({
+      ok: false,
+      error: { code: "ParseError", message: "Unterminated string" }
+    });
+  });
+
+  it("rejects strings ending after an escaped quote", () => {
+    expect(parseInput('"abc\\"')).toEqual({
+      ok: false,
+      error: { code: "ParseError", message: "Unterminated string" }
+    });
+  });
+
+  it("rejects non-finite real literals", () => {
+    expect(parseInput("1e309")).toEqual({
+      ok: false,
+      error: { code: "InvalidToken", message: "Invalid token: 1e309" }
+    });
+  });
+
+  it("rejects malformed exponent atoms as invalid tokens", () => {
+    expect(parseInput("1e2.3")).toEqual({
+      ok: false,
+      error: { code: "InvalidToken", message: "Invalid token: 1e2.3" }
+    });
+  });
+
   it("rejects unterminated programs", () => {
     expect(parseInput("<< 1 2 +")).toEqual({
       ok: false,
