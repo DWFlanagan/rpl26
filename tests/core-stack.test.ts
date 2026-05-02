@@ -52,4 +52,40 @@ describe("core stack operations", () => {
       expect(result.state.stack[0]).not.toBe(result.state.stack[1]);
     }
   });
+
+  it("duplicates the top two stack objects", () => {
+    expect(evaluateObject(state(real(1), real(2)), name("DUP2"))).toEqual({
+      ok: true,
+      state: state(real(1), real(2), real(1), real(2))
+    });
+  });
+
+  it("drops the top two stack objects", () => {
+    expect(evaluateObject(state(real(1), real(2), real(3)), name("DROP2"))).toEqual({
+      ok: true,
+      state: state(real(1))
+    });
+  });
+
+  it("rotates level 3 to level 1", () => {
+    expect(evaluateObject(state(real(1), real(2), real(3)), name("ROT"))).toEqual({
+      ok: true,
+      state: state(real(2), real(3), real(1))
+    });
+  });
+
+  it("picks a stack object by one-based level", () => {
+    expect(evaluateObject(state(real(10), real(20), real(30), real(2)), name("PICK"))).toEqual({
+      ok: true,
+      state: state(real(10), real(20), real(30), real(20))
+    });
+  });
+
+  it("rejects invalid PICK counts without mutating state", () => {
+    expect(evaluateObject(state(real(10), real(0)), name("PICK"))).toEqual({
+      ok: false,
+      state: state(real(10), real(0)),
+      error: { code: "InvalidOperation", message: "PICK requires a positive integer level" }
+    });
+  });
 });

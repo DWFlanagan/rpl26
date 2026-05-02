@@ -12,10 +12,30 @@ export const BUILTIN_NAMES = [
   "SQ",
   "SQRT",
   "DUP",
+  "DUP2",
   "DROP",
+  "DROP2",
   "SWAP",
   "OVER",
-  "CLEAR"
+  "ROT",
+  "PICK",
+  "CLEAR",
+  "->LIST",
+  "LIST->",
+  "SIZE",
+  "GET",
+  "TRUE",
+  "FALSE",
+  "==",
+  "<>",
+  "<",
+  ">",
+  "<=",
+  ">=",
+  "IF",
+  "THEN",
+  "ELSE",
+  "END"
 ];
 
 export const cloneObject = (object: RplObject): RplObject => {
@@ -43,12 +63,29 @@ const underflow = (state: CalculatorState, command: string, count: number): Eval
 const real = (value: number): RplObject => ({ kind: "real", value });
 
 const sourceOf = (object: RplObject): string => object.source ?? object.kind;
+const isName = (object: RplObject, name: string): boolean => object.kind === "name" && object.name === name;
 
 const typeMismatch = (state: CalculatorState, command: string): EvaluateResult => ({
   ok: false,
   state: cloneState(state),
   error: { code: "TypeMismatch", message: `${command} requires real arguments` }
 });
+
+const invalidOperation = (state: CalculatorState, message: string): EvaluateResult => ({
+  ok: false,
+  state: cloneState(state),
+  error: { code: "InvalidOperation", message }
+});
+
+const typeError = (state: CalculatorState, message: string): EvaluateResult => ({
+  ok: false,
+  state: cloneState(state),
+  error: { code: "TypeMismatch", message }
+});
+
+function integerValue(object: RplObject): number | undefined {
+  return object.kind === "real" && Number.isInteger(object.value) ? object.value : undefined;
+}
 
 const push = (state: CalculatorState, object: RplObject): EvaluateResult => ({
   ok: true,
@@ -80,6 +117,38 @@ function binaryReal(state: CalculatorState, command: string, fn: (x: number, y: 
   return fn(x.value, y.value);
 }
 
+function booleanResult(state: CalculatorState, value: boolean): EvaluateResult {
+  return replaceTopTwo(state, value ? 1 : 0);
+}
+
+function comparableObject(object: RplObject): unknown {
+  switch (object.kind) {
+    case "program":
+      return { kind: "program", body: object.body.map(comparableObject) };
+    case "list":
+      return { kind: "list", items: object.items.map(comparableObject) };
+    case "real":
+      return { kind: "real", value: object.value };
+    case "name":
+      return { kind: "name", name: object.name };
+    case "quotedName":
+      return { kind: "quotedName", name: object.name };
+    case "string":
+      return { kind: "string", value: object.value };
+  }
+}
+
+function structurallyEqual(left: RplObject, right: RplObject): boolean {
+  return JSON.stringify(comparableObject(left)) === JSON.stringify(comparableObject(right));
+}
+
+function binaryObject(state: CalculatorState, command: string, fn: (x: RplObject, y: RplObject) => EvaluateResult): EvaluateResult {
+  if (state.stack.length < 2) return underflow(state, command, 2);
+  const x = state.stack[state.stack.length - 2];
+  const y = state.stack[state.stack.length - 1];
+  return fn(x, y);
+}
+
 function evaluateProgram(
   state: CalculatorState,
   program: Extract<RplObject, { kind: "program" }>,
@@ -90,8 +159,13 @@ function evaluateProgram(
   for (let index = 0; index < program.body.length; index += 1) {
     const object = program.body[index];
     const before = current.stack.map(cloneObject);
-    const localBinding = object.kind === "name" && object.name === "->" ? bindLocals(current, program.body, index, locals, observer) : undefined;
-    const result = localBinding?.result ?? evaluateObject(current, object, observer, locals);
+    const special =
+      object.kind === "name" && object.name === "->"
+        ? bindLocals(current, program.body, index, locals, observer)
+        : object.kind === "name" && object.name === "IF"
+          ? evaluateConditional(current, program.body, index, locals, observer)
+          : undefined;
+    const result = special?.result ?? evaluateObject(current, object, observer, locals);
     current = result.state;
     const after = current.stack.map(cloneObject);
 
@@ -101,11 +175,74 @@ function evaluateProgram(
     }
 
     observer?.({ source: sourceOf(object), ok: true, before, after });
-    if (localBinding !== undefined) {
-      index = localBinding.nextIndex;
+    if (special !== undefined) {
+      index = special.nextIndex;
     }
   }
   return { ok: true, state: current };
+}
+
+function evaluateConditional(
+  state: CalculatorState,
+  body: RplObject[],
+  ifIndex: number,
+  locals: LocalBindings,
+  observer?: EvaluationObserver
+): { result: EvaluateResult; nextIndex: number } {
+  if (!isName(body[ifIndex + 1], "THEN")) {
+    return {
+      result: invalidOperation(state, "IF requires THEN"),
+      nextIndex: ifIndex
+    };
+  }
+
+  const branchEnd = findConditionalEnd(body, ifIndex + 2);
+  if (branchEnd === undefined) {
+    return {
+      result: invalidOperation(state, "IF requires END"),
+      nextIndex: body.length - 1
+    };
+  }
+
+  if (state.stack.length < 1) {
+    return { result: underflow(state, "IF", 1), nextIndex: branchEnd.endIndex };
+  }
+
+  const next = cloneState(state);
+  const condition = next.stack.pop() as RplObject;
+  if (condition.kind !== "real") {
+    return { result: typeError(state, "IF requires a real truth value"), nextIndex: branchEnd.endIndex };
+  }
+
+  const trueBody = body.slice(ifIndex + 2, branchEnd.elseIndex ?? branchEnd.endIndex);
+  const falseBody = branchEnd.elseIndex === undefined ? [] : body.slice(branchEnd.elseIndex + 1, branchEnd.endIndex);
+  const selectedBody = condition.value !== 0 ? trueBody : falseBody;
+  const result = evaluateProgram(next, { kind: "program", body: selectedBody }, observer, locals);
+  if (!result.ok) return { result: { ...result, state: cloneState(state) }, nextIndex: branchEnd.endIndex };
+  return { result, nextIndex: branchEnd.endIndex };
+}
+
+function findConditionalEnd(body: RplObject[], startIndex: number): { elseIndex?: number; endIndex: number } | undefined {
+  let depth = 0;
+  let elseIndex: number | undefined;
+
+  for (let index = startIndex; index < body.length; index += 1) {
+    const object = body[index];
+    if (isName(object, "IF")) {
+      depth += 1;
+      continue;
+    }
+    if (isName(object, "END")) {
+      if (depth === 0) return { elseIndex, endIndex: index };
+      depth -= 1;
+      continue;
+    }
+    if (depth === 0 && elseIndex === undefined && isName(object, "ELSE")) {
+      elseIndex = index;
+    }
+  }
+
+  return undefined;
 }
 
 function bindLocals(
@@ -224,8 +361,19 @@ function applyBuiltin(state: CalculatorState, name: string, observer?: Evaluatio
       next.stack.push(cloneObject(next.stack[next.stack.length - 1]));
       return { ok: true, state: next };
     }
+    case "DUP2": {
+      if (next.stack.length < 2) return underflow(state, "DUP2", 2);
+      next.stack.push(cloneObject(next.stack[next.stack.length - 2]), cloneObject(next.stack[next.stack.length - 1]));
+      return { ok: true, state: next };
+    }
     case "DROP": {
       if (next.stack.length < 1) return underflow(state, "DROP", 1);
+      next.stack.pop();
+      return { ok: true, state: next };
+    }
+    case "DROP2": {
+      if (next.stack.length < 2) return underflow(state, "DROP2", 2);
+      next.stack.pop();
       next.stack.pop();
       return { ok: true, state: next };
     }
@@ -241,8 +389,76 @@ function applyBuiltin(state: CalculatorState, name: string, observer?: Evaluatio
       next.stack.push(cloneObject(next.stack[next.stack.length - 2]));
       return { ok: true, state: next };
     }
+    case "ROT": {
+      if (next.stack.length < 3) return underflow(state, "ROT", 3);
+      const z = next.stack.pop() as RplObject;
+      const y = next.stack.pop() as RplObject;
+      const x = next.stack.pop() as RplObject;
+      next.stack.push(y, z, x);
+      return { ok: true, state: next };
+    }
+    case "PICK": {
+      if (next.stack.length < 1) return underflow(state, "PICK", 1);
+      const count = integerValue(next.stack[next.stack.length - 1]);
+      if (count === undefined || count < 1) return invalidOperation(state, "PICK requires a positive integer level");
+      next.stack.pop();
+      if (next.stack.length < count) return underflow(state, "PICK", count + 1);
+      next.stack.push(cloneObject(next.stack[next.stack.length - count]));
+      return { ok: true, state: next };
+    }
     case "CLEAR":
       return { ok: true, state: { stack: [], variables: next.variables } };
+    case "->LIST": {
+      if (next.stack.length < 1) return underflow(state, "->LIST", 1);
+      const count = integerValue(next.stack[next.stack.length - 1]);
+      if (count === undefined || count < 0) return invalidOperation(state, "->LIST requires a non-negative integer count");
+      next.stack.pop();
+      if (next.stack.length < count) return underflow(state, "->LIST", count + 1);
+      const items = next.stack.splice(next.stack.length - count, count);
+      next.stack.push({ kind: "list", items: items.map(cloneObject) });
+      return { ok: true, state: next };
+    }
+    case "LIST->": {
+      if (next.stack.length < 1) return underflow(state, "LIST->", 1);
+      const object = next.stack.pop() as RplObject;
+      if (object.kind !== "list") return typeError(state, "LIST-> requires a list");
+      next.stack.push(...object.items.map(cloneObject), real(object.items.length));
+      return { ok: true, state: next };
+    }
+    case "SIZE": {
+      if (next.stack.length < 1) return underflow(state, "SIZE", 1);
+      const object = next.stack.pop() as RplObject;
+      if (object.kind !== "list") return typeError(state, "SIZE requires a list");
+      next.stack.push(real(object.items.length));
+      return { ok: true, state: next };
+    }
+    case "GET": {
+      if (next.stack.length < 2) return underflow(state, "GET", 2);
+      const index = integerValue(next.stack[next.stack.length - 1]);
+      const object = next.stack[next.stack.length - 2];
+      if (object.kind !== "list") return typeError(state, "GET requires a list and index");
+      if (index === undefined || index < 1 || index > object.items.length) return invalidOperation(state, "GET index out of range");
+      next.stack.pop();
+      next.stack.pop();
+      next.stack.push(cloneObject(object.items[index - 1]));
+      return { ok: true, state: next };
+    }
+    case "TRUE":
+      return push(state, real(1));
+    case "FALSE":
+      return push(state, real(0));
+    case "==":
+      return binaryObject(state, "==", (x, y) => booleanResult(state, structurallyEqual(x, y)));
+    case "<>":
+      return binaryObject(state, "<>", (x, y) => booleanResult(state, !structurallyEqual(x, y)));
+    case "<":
+      return binaryReal(state, "<", (x, y) => booleanResult(state, x < y));
+    case ">":
+      return binaryReal(state, ">", (x, y) => booleanResult(state, x > y));
+    case "<=":
+      return binaryReal(state, "<=", (x, y) => booleanResult(state, x <= y));
+    case ">=":
+      return binaryReal(state, ">=", (x, y) => booleanResult(state, x >= y));
     default:
       return undefined;
   }

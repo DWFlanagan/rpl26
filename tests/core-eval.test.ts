@@ -130,4 +130,38 @@ describe("RPL evaluator", () => {
       error: { code: "StackUnderflow", message: "-> requires 1 stack object" }
     });
   });
+
+  it("evaluates the true branch of a conditional", () => {
+    const choose = program(real(1), name("IF"), name("THEN"), real(2), name("ELSE"), real(3), name("END"));
+    expect(evaluateObject(state(choose), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(real(2))
+    });
+  });
+
+  it("evaluates the false branch of a conditional", () => {
+    const choose = program(real(0), name("IF"), name("THEN"), real(2), name("ELSE"), real(3), name("END"));
+    expect(evaluateObject(state(choose), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(real(3))
+    });
+  });
+
+  it("allows conditionals without ELSE", () => {
+    const choose = program(real(0), name("IF"), name("THEN"), real(2), name("END"));
+    expect(evaluateObject(state(real(9), choose), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(real(9))
+    });
+  });
+
+  it("rejects non-real conditional values without mutating state", () => {
+    const choose = program({ kind: "string", value: "yes" }, name("IF"), name("THEN"), real(2), name("END"));
+    const before = state(choose);
+    expect(evaluateObject(before, name("EVAL"))).toEqual({
+      ok: false,
+      state: before,
+      error: { code: "TypeMismatch", message: "IF requires a real truth value" }
+    });
+  });
 });
