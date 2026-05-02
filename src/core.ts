@@ -1,4 +1,4 @@
-import type { CalculatorState, EvaluateResult, EvaluationObserver, RplObject } from "./types.js";
+import type { CalculatorState, EvaluateResult, EvaluationObserver, LocalBindings, RplObject } from "./types.js";
 
 export const BUILTIN_NAMES = [
   "EVAL",
@@ -83,12 +83,15 @@ function binaryReal(state: CalculatorState, command: string, fn: (x: number, y: 
 function evaluateProgram(
   state: CalculatorState,
   program: Extract<RplObject, { kind: "program" }>,
-  observer?: EvaluationObserver
+  observer?: EvaluationObserver,
+  locals: LocalBindings = {}
 ): EvaluateResult {
   let current = cloneState(state);
-  for (const object of program.body) {
+  for (let index = 0; index < program.body.length; index += 1) {
+    const object = program.body[index];
     const before = current.stack.map(cloneObject);
-    const result = evaluateObject(current, object, observer);
+    const localBinding = object.kind === "name" && object.name === "->" ? bindLocals(current, program.body, index, locals, observer) : undefined;
+    const result = localBinding?.result ?? evaluateObject(current, object, observer, locals);
     current = result.state;
     const after = current.stack.map(cloneObject);
 
@@ -98,11 +101,52 @@ function evaluateProgram(
     }
 
     observer?.({ source: sourceOf(object), ok: true, before, after });
+    if (localBinding !== undefined) {
+      index = localBinding.nextIndex;
+    }
   }
   return { ok: true, state: current };
 }
 
-function applyBuiltin(state: CalculatorState, name: string, observer?: EvaluationObserver): EvaluateResult | undefined {
+function bindLocals(
+  state: CalculatorState,
+  body: RplObject[],
+  arrowIndex: number,
+  locals: LocalBindings,
+  observer?: EvaluationObserver
+): { result: EvaluateResult; nextIndex: number } {
+  const names: string[] = [];
+  let bodyIndex = arrowIndex + 1;
+
+  while (bodyIndex < body.length && body[bodyIndex].kind === "name") {
+    names.push((body[bodyIndex] as Extract<RplObject, { kind: "name" }>).name);
+    bodyIndex += 1;
+  }
+
+  const localBody = body[bodyIndex];
+  if (names.length === 0 || localBody?.kind !== "program") {
+    return {
+      result: {
+        ok: false,
+        state: cloneState(state),
+        error: { code: "InvalidOperation", message: "-> requires local names followed by a program" }
+      },
+      nextIndex: bodyIndex
+    };
+  }
+
+  if (state.stack.length < names.length) {
+    return { result: underflow(state, "->", names.length), nextIndex: bodyIndex };
+  }
+
+  const next = cloneState(state);
+  const values = next.stack.splice(next.stack.length - names.length, names.length);
+  const localValues = Object.fromEntries(names.map((name, index) => [name, cloneObject(values[index])]));
+  const result = evaluateProgram(next, localBody, observer, { ...locals, ...localValues });
+  return { result, nextIndex: bodyIndex };
+}
+
+function applyBuiltin(state: CalculatorState, name: string, observer?: EvaluationObserver, locals: LocalBindings = {}): EvaluateResult | undefined {
   const next = cloneState(state);
 
   switch (name) {
@@ -110,11 +154,11 @@ function applyBuiltin(state: CalculatorState, name: string, observer?: Evaluatio
       if (next.stack.length < 1) return underflow(state, "EVAL", 1);
       const object = next.stack.pop() as RplObject;
       if (object.kind === "program") {
-        const result = evaluateProgram(next, object, observer);
+        const result = evaluateProgram(next, object, observer, locals);
         if (!result.ok) return { ...result, state: cloneState(state) };
         return result;
       }
-      return evaluateObject(next, object, observer);
+      return evaluateObject(next, object, observer, locals);
     }
     case "STO": {
       if (next.stack.length < 2) return underflow(state, "STO", 2);
@@ -204,13 +248,23 @@ function applyBuiltin(state: CalculatorState, name: string, observer?: Evaluatio
   }
 }
 
-export function evaluateObject(state: CalculatorState, object: RplObject, observer?: EvaluationObserver): EvaluateResult {
+export function evaluateObject(
+  state: CalculatorState,
+  object: RplObject,
+  observer?: EvaluationObserver,
+  locals: LocalBindings = {}
+): EvaluateResult {
   if (object.kind !== "name") {
     return push(state, object);
   }
 
-  const builtin = applyBuiltin(state, object.name, observer);
+  const builtin = applyBuiltin(state, object.name, observer, locals);
   if (builtin !== undefined) return builtin;
+
+  const local = locals[object.name];
+  if (local !== undefined) {
+    return push(state, local);
+  }
 
   const variable = state.variables[object.name];
   if (variable !== undefined) {

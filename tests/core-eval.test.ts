@@ -82,4 +82,52 @@ describe("RPL evaluator", () => {
       error: { code: "UndefinedName", message: "Undefined name: MISSING" }
     });
   });
+
+  it("binds one local variable inside a program body", () => {
+    const square = program(name("->"), name("x"), program(name("x"), name("x"), name("*")));
+    expect(evaluateObject(state(real(5), square), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(real(25))
+    });
+  });
+
+  it("binds multiple local variables from deeper stack to top stack", () => {
+    const add = program(name("->"), name("x"), name("y"), program(name("x"), name("y"), name("+")));
+    expect(evaluateObject(state(real(2), real(3), add), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(real(5))
+    });
+  });
+
+  it("does not persist local variables as globals", () => {
+    const square = program(name("->"), name("x"), program(name("x"), name("x"), name("*")));
+    expect(evaluateObject(state(real(5), square), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(real(25))
+    });
+    expect(evaluateObject(state(), name("x"))).toEqual({
+      ok: false,
+      state: state(),
+      error: { code: "UndefinedName", message: "Undefined name: x" }
+    });
+  });
+
+  it("pushes local program values without recursively executing them", () => {
+    const localProgram = program(real(1), real(2), name("+"));
+    const invoke = program(name("->"), name("p"), program(name("p")));
+    expect(evaluateObject(state(localProgram, invoke), name("EVAL"))).toEqual({
+      ok: true,
+      state: state(localProgram)
+    });
+  });
+
+  it("reports local binding underflow without mutating state", () => {
+    const square = program(name("->"), name("x"), program(name("x"), name("x"), name("*")));
+    const before = state(square);
+    expect(evaluateObject(before, name("EVAL"))).toEqual({
+      ok: false,
+      state: before,
+      error: { code: "StackUnderflow", message: "-> requires 1 stack object" }
+    });
+  });
 });

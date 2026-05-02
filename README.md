@@ -23,8 +23,18 @@ The REPL supports `.stack`, `.vars`, `.trace`, `.clear`, and `.exit`.
 - Arithmetic commands: `+`, `-`, `*`, `/`, `NEG`, `INV`, `SQ`, `SQRT`.
 - Program evaluation through `EVAL`.
 - Global variables through `STO`.
+- Local variables through `->`, such as `5 << -> x << x x * >> >> EVAL`.
 - Persistent calculator session.
 - MCP tools: `execute`, `get_stack`, `get_variables`, `clear`, `get_trace`.
+
+## Examples
+
+```rpl
+2 3 +
+<< 1 + >> 'INC' STO 41 INC
+5 << -> x << x x * >> >> EVAL
+2 3 << -> x y << x y + >> >> EVAL
+```
 
 ## Clean-Room Rule
 

@@ -30,6 +30,8 @@ export type CalculatorState = {
   variables: Record<string, RplObject>;
 };
 
+export type LocalBindings = Record<string, RplObject>;
+
 export type EvaluateResult =
   | { ok: true; state: CalculatorState }
   | { ok: false; state: CalculatorState; error: CalculatorError };

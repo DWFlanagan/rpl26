@@ -9,6 +9,16 @@ describe("RPL identity examples", () => {
       "stored increment program",
       "<< 1 + >> 'INC' STO 41 INC",
       [{ level: 1, value: { kind: "real", value: 42 } }]
+    ],
+    [
+      "local variable square program",
+      "5 << -> x << x x * >> >> EVAL",
+      [{ level: 1, value: { kind: "real", value: 25 } }]
+    ],
+    [
+      "multiple local variables bind from deeper stack to top",
+      "2 3 << -> x y << x y + >> >> EVAL",
+      [{ level: 1, value: { kind: "real", value: 5 } }]
     ]
   ])("%s", (_label, input, expectedStack) => {
     const session = new CalculatorSession();
