@@ -1,8 +1,14 @@
-# RPN50 Milestone 2 Design
+# rpl26 Milestone 2 Design
+
+## Reference Baseline
+
+Milestone 2 should be audited against HP 48 User RPL behavior before the command set is treated as stable. The HP 48G Series User's Guide and HP 48G Series Advanced User's Reference are the preferred sources. HP 49/50 material is secondary and should not introduce CAS-era assumptions.
+
+The current Milestone 2 implementation is a useful provisional runtime slice. Any command whose semantics differ from HP 48 User RPL should be corrected, documented as an intentional divergence, or moved out of the compatibility path.
 
 ## Purpose
 
-Milestone 2 grows RPN50 from an RPL identity slice into a small everyday stack-programming environment. It adds practical stack words, basic list operations, comparison words that produce truth values, and a first conditional form.
+Milestone 2 grows `rpl26` from an RPL identity slice into a small everyday stack-programming environment. It adds practical stack words, basic list operations, comparison words that produce truth values, and a first conditional form.
 
 CAS, symbolic algebra, exact arithmetic, units, matrices, plotting, and full HP compatibility remain out of scope.
 
@@ -68,3 +74,9 @@ Tests should cover:
 - Comparison truth values and type mismatch.
 - Conditional true branch, false branch, omitted `ELSE`, and atomic error behavior.
 - CLI/REPL visibility through autocomplete and conformance examples.
+
+## Manual Audit
+
+Before adding more commands, create or import a structured HP 48 manual extraction artifact and label each relevant command as `core`, `cas`, `deferred-non-cas`, `system`, `ui`, or `unknown`.
+
+The first audit pass should check Milestone 2 assumptions for `DUP2`, `DROP2`, `ROT`, `PICK`, `->LIST`, `LIST->`, `SIZE`, `GET`, truth values, comparisons, and `IF THEN ELSE END`.

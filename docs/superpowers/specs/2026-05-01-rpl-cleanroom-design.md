@@ -1,10 +1,16 @@
-# RPN50 Clean-Room RPL Design
+# rpl26 Clean-Room RPL Design
+
+## Project Name
+
+The working project name is `rpl26`. Older repository paths and package metadata may still say `rpn50` until a separate rename pass updates code, scripts, and docs together.
 
 ## Purpose
 
-Build a clean-room, User RPL-inspired calculator engine that behaves like a persistent object stack and tiny Reverse Polish Lisp runtime, not like a stateless math API and not like an HP ROM emulator.
+Build a clean-room, HP 48 User RPL-inspired calculator engine that behaves like a persistent object stack and tiny Reverse Polish Lisp runtime, not like a stateless math API and not like an HP ROM emulator.
 
 The first useful version should expose strict RPL-style input through an MCP interface so a chat agent can operate the stack, evaluate program objects, store named values or programs, inspect state, and explain the executed steps.
+
+The HP 48G Series User's Guide and HP 48G Series Advanced User's Reference are the preferred behavioral references because the HP 48 line centers the non-CAS User RPL model that `rpl26` is trying to capture. HP 49/50 material may be used later as secondary clarification only when the behavior is clearly shared and does not pull CAS-era assumptions into the core.
 
 The project may use public manuals and observable calculator behavior as references, but it must not copy HP ROM code, firmware internals, object encodings, System RPL implementation details, or emulator internals.
 
@@ -27,7 +33,7 @@ Milestone 1 is a small "RPL identity slice." It should demonstrate:
 - List and string objects as inert first-class values.
 - Persistent session state and recent trace through MCP tools.
 
-Milestone 1 intentionally excludes full HP 50g compatibility. It is inspired by User RPL's object stack and evaluation model, not by binary object formats, menus, flags, directories, CAS behavior, or System RPL.
+Milestone 1 intentionally excludes HP calculator compatibility as a blanket promise. It is inspired by HP 48 User RPL's object stack and evaluation model, not by binary object formats, menus, flags, directories, CAS behavior, or System RPL.
 
 ## RPL Semantics For Milestone 1
 
@@ -163,7 +169,7 @@ Development should be test-driven:
 
 Deferred features include:
 
-- HP 50g UI, keyboard, menus, flags, directories, and display formatting.
+- HP UI, keyboard, menus, flags, directories, and display formatting.
 - CAS, algebraic simplification, symbolic manipulation, exact arithmetic, units, complex numbers, matrices, arrays, and graphics objects.
 - Local variables, loops, conditionals, error trapping, and program debugging.
 - System RPL, `SYSEVAL`, `LIBEVAL`, ROM behavior, and firmware compatibility.
