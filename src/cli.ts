@@ -1,8 +1,12 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { BUILTIN_NAMES } from "./core.js";
+import { formatObject } from "./format.js";
 import { CalculatorSession } from "./session.js";
+import { describeWord, listWords } from "./words.js";
 import type { ExecuteResult, RplObject, StackEntry } from "./types.js";
+
+export { formatObject } from "./format.js";
 
 export type CliResult = {
   exitCode: number;
@@ -15,24 +19,7 @@ type CliMode = "calc" | "repl";
 type CompletionResult = [string[], string];
 
 const usage = 'Usage: rpl26 "2 3 +"';
-const DOT_COMMANDS = [".stack", ".vars", ".trace", ".clear", ".exit", ".quit"];
-
-function formatObject(object: RplObject): string {
-  switch (object.kind) {
-    case "real":
-      return String(object.value);
-    case "name":
-      return object.name;
-    case "quotedName":
-      return `'${object.name}'`;
-    case "program":
-      return `<< ${object.body.map(formatObject).join(" ")} >>`;
-    case "list":
-      return `{ ${object.items.map(formatObject).join(" ")} }`;
-    case "string":
-      return JSON.stringify(object.value);
-  }
-}
+const DOT_COMMANDS = [".stack", ".vars", ".trace", ".words", ".help", ".clear", ".exit", ".quit"];
 
 export function formatStack(stack: StackEntry[]): string {
   if (stack.length === 0) return "Stack: <empty>";
@@ -92,22 +79,10 @@ export function runReplLines(lines: string[]): CliResult {
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.length === 0) continue;
-    if (trimmed === ".exit" || trimmed === ".quit") break;
-    if (trimmed === ".stack") {
-      outputLines.push(formatStack(session.getStack()));
-      continue;
-    }
-    if (trimmed === ".vars") {
-      outputLines.push(formatVariables(session.getVariables()));
-      continue;
-    }
-    if (trimmed === ".trace") {
-      outputLines.push(formatTrace({ ok: true, stack: session.getStack(), variables: session.getVariables(), trace: session.getTrace() }));
-      continue;
-    }
-    if (trimmed === ".clear") {
-      session.clear();
-      outputLines.push("Cleared.");
+    const dotResult = runDotCommand(session, trimmed);
+    if (dotResult === "exit") break;
+    if (dotResult !== undefined) {
+      outputLines.push(dotResult);
       continue;
     }
 
@@ -139,7 +114,7 @@ export async function runInteractiveRepl(): Promise<void> {
     completer: (line) => completeReplInput(line, session)
   });
 
-  console.log("rpl26 REPL. Commands: .stack .vars .trace .clear .exit");
+  console.log("rpl26 REPL. Commands: .stack .vars .trace .words .help .clear .exit");
   repl.prompt();
 
   for await (const line of repl) {
@@ -155,18 +130,30 @@ export async function runInteractiveRepl(): Promise<void> {
 function runReplLine(session: CalculatorSession, line: string): string | "exit" {
   const trimmed = line.trim();
   if (trimmed.length === 0) return "";
-  if (trimmed === ".exit" || trimmed === ".quit") return "exit";
-  if (trimmed === ".stack") return formatStack(session.getStack());
-  if (trimmed === ".vars") return formatVariables(session.getVariables());
-  if (trimmed === ".trace") return formatTrace({ ok: true, stack: session.getStack(), variables: session.getVariables(), trace: session.getTrace() });
-  if (trimmed === ".clear") {
-    session.clear();
-    return "Cleared.";
-  }
+  const dotResult = runDotCommand(session, trimmed);
+  if (dotResult !== undefined) return dotResult;
 
   const result = session.execute(trimmed);
   if (!result.ok) return `${result.error.code}: ${result.error.message}`;
   return formatStack(result.stack);
+}
+
+function runDotCommand(session: CalculatorSession, trimmed: string): string | "exit" | undefined {
+  if (trimmed === ".exit" || trimmed === ".quit") return "exit";
+  if (trimmed === ".stack") return formatStack(session.getStack());
+  if (trimmed === ".vars") return formatVariables(session.getVariables());
+  if (trimmed === ".trace") return formatTrace({ ok: true, stack: session.getStack(), variables: session.getVariables(), trace: session.getTrace() });
+  if (trimmed === ".words") return listWords().join(" ");
+  if (trimmed === ".help") return "Use .help WORD for stack effect, description, and source note.";
+  if (trimmed.startsWith(".help ")) {
+    const word = trimmed.slice(".help ".length).trim();
+    return describeWord(word) ?? `No help for ${word}`;
+  }
+  if (trimmed === ".clear") {
+    session.clear();
+    return "Cleared.";
+  }
+  return undefined;
 }
 
 export function main(args = process.argv.slice(2), mode: CliMode = "calc"): void {

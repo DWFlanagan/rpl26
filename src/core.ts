@@ -1,50 +1,6 @@
 import type { CalculatorState, EvaluateResult, EvaluationObserver, LocalBindings, RplObject } from "./types.js";
-
-export const BUILTIN_NAMES = [
-  "EVAL",
-  "STO",
-  "+",
-  "-",
-  "*",
-  "/",
-  "NEG",
-  "INV",
-  "SQ",
-  "SQRT",
-  "DUP",
-  "DUP2",
-  "DROP",
-  "DROP2",
-  "SWAP",
-  "OVER",
-  "ROT",
-  "PICK",
-  "CLEAR",
-  "->LIST",
-  "LIST->",
-  "SIZE",
-  "GET",
-  "TRUE",
-  "FALSE",
-  "==",
-  "<>",
-  "<",
-  ">",
-  "<=",
-  ">=",
-  "IF",
-  "THEN",
-  "ELSE",
-  "END",
-  "START",
-  "NEXT",
-  "STEP",
-  "FOR",
-  "WHILE",
-  "REPEAT",
-  "DO",
-  "UNTIL"
-];
+import { formatObject } from "./format.js";
+export { BUILTIN_NAMES } from "./words.js";
 
 export const cloneObject = (object: RplObject): RplObject => {
   switch (object.kind) {
@@ -52,6 +8,8 @@ export const cloneObject = (object: RplObject): RplObject => {
       return { ...object, body: object.body.map(cloneObject) };
     case "list":
       return { ...object, items: object.items.map(cloneObject) };
+    case "tagged":
+      return { ...object, value: cloneObject(object.value) };
     default:
       return { ...object };
   }
@@ -97,6 +55,18 @@ function integerValue(object: RplObject): number | undefined {
   return object.kind === "real" && Number.isInteger(object.value) ? object.value : undefined;
 }
 
+function requireRange(state: CalculatorState, command: string, length: number): { ok: true; start: number; end: number } | { ok: false; result: EvaluateResult } {
+  const start = integerValue(state.stack[state.stack.length - 2]);
+  const end = integerValue(state.stack[state.stack.length - 1]);
+  if (start === undefined || end === undefined) {
+    return { ok: false, result: invalidOperation(state, `${command} requires integer indexes`) };
+  }
+  if (start < 1 || end < start || end > length) {
+    return { ok: false, result: invalidOperation(state, `${command} index out of range`) };
+  }
+  return { ok: true, start, end };
+}
+
 const push = (state: CalculatorState, object: RplObject): EvaluateResult => ({
   ok: true,
   state: { ...cloneState(state), stack: [...state.stack.map(cloneObject), cloneObject(object)] }
@@ -137,6 +107,8 @@ function comparableObject(object: RplObject): unknown {
       return { kind: "program", body: object.body.map(comparableObject) };
     case "list":
       return { kind: "list", items: object.items.map(comparableObject) };
+    case "tagged":
+      return { kind: "tagged", tag: object.tag, value: comparableObject(object.value) };
     case "real":
       return { kind: "real", value: object.value };
     case "name":
@@ -669,6 +641,103 @@ function applyBuiltin(state: CalculatorState, name: string, observer?: Evaluatio
       next.stack.pop();
       next.stack.pop();
       next.stack.push(cloneObject(object.items[index - 1]));
+      return { ok: true, state: next };
+    }
+    case "HEAD": {
+      if (next.stack.length < 1) return underflow(state, "HEAD", 1);
+      const object = next.stack.pop() as RplObject;
+      if (object.kind === "string") {
+        if (object.value.length === 0) return invalidOperation(state, "HEAD requires a non-empty string");
+        next.stack.push({ kind: "string", value: Array.from(object.value)[0] ?? "" });
+        return { ok: true, state: next };
+      }
+      if (object.kind === "list") {
+        if (object.items.length === 0) return invalidOperation(state, "HEAD requires a non-empty list");
+        next.stack.push(cloneObject(object.items[0]));
+        return { ok: true, state: next };
+      }
+      return typeError(state, "HEAD requires a list or string");
+    }
+    case "TRIL": {
+      if (next.stack.length < 1) return underflow(state, "TRIL", 1);
+      const object = next.stack.pop() as RplObject;
+      if (object.kind === "string") {
+        if (object.value.length === 0) return invalidOperation(state, "TRIL requires a non-empty string");
+        next.stack.push({ kind: "string", value: Array.from(object.value).slice(1).join("") });
+        return { ok: true, state: next };
+      }
+      if (object.kind === "list") {
+        if (object.items.length === 0) return invalidOperation(state, "TRIL requires a non-empty list");
+        next.stack.push({ kind: "list", items: object.items.slice(1).map(cloneObject) });
+        return { ok: true, state: next };
+      }
+      return typeError(state, "TRIL requires a list or string");
+    }
+    case "SUB": {
+      if (next.stack.length < 3) return underflow(state, "SUB", 3);
+      const target = next.stack[next.stack.length - 3];
+      const length = target.kind === "string" ? Array.from(target.value).length : target.kind === "list" ? target.items.length : undefined;
+      if (length === undefined) return typeError(state, "SUB requires a list or string with start and end indexes");
+      const range = requireRange(next, "SUB", length);
+      if (!range.ok) return range.result;
+      next.stack.pop();
+      next.stack.pop();
+      next.stack.pop();
+      if (target.kind === "string") {
+        next.stack.push({ kind: "string", value: Array.from(target.value).slice(range.start - 1, range.end).join("") });
+      } else if (target.kind === "list") {
+        next.stack.push({ kind: "list", items: target.items.slice(range.start - 1, range.end).map(cloneObject) });
+      }
+      return { ok: true, state: next };
+    }
+    case "POS": {
+      if (next.stack.length < 2) return underflow(state, "POS", 2);
+      const needle = next.stack.pop() as RplObject;
+      const haystack = next.stack.pop() as RplObject;
+      if (haystack.kind === "string") {
+        if (needle.kind !== "string") return typeError(state, "POS requires a string substring for string search");
+        const index = haystack.value.indexOf(needle.value);
+        next.stack.push(real(index < 0 ? 0 : index + 1));
+        return { ok: true, state: next };
+      }
+      if (haystack.kind === "list") {
+        const index = haystack.items.findIndex((item) => structurallyEqual(item, needle));
+        next.stack.push(real(index < 0 ? 0 : index + 1));
+        return { ok: true, state: next };
+      }
+      return typeError(state, "POS requires a list or string");
+    }
+    case "CHR": {
+      if (next.stack.length < 1) return underflow(state, "CHR", 1);
+      const code = integerValue(next.stack[next.stack.length - 1]);
+      if (code === undefined || code < 0) return invalidOperation(state, "CHR requires a non-negative integer character code");
+      next.stack.pop();
+      next.stack.push({ kind: "string", value: String.fromCodePoint(code) });
+      return { ok: true, state: next };
+    }
+    case "NUM": {
+      if (next.stack.length < 1) return underflow(state, "NUM", 1);
+      const object = next.stack.pop() as RplObject;
+      if (object.kind !== "string") return typeError(state, "NUM requires a string");
+      const first = Array.from(object.value)[0];
+      if (first === undefined) return invalidOperation(state, "NUM requires a non-empty string");
+      next.stack.push(real(first.codePointAt(0) ?? 0));
+      return { ok: true, state: next };
+    }
+    case "->STR": {
+      if (next.stack.length < 1) return underflow(state, "->STR", 1);
+      const object = next.stack.pop() as RplObject;
+      next.stack.push({ kind: "string", value: formatObject(object) });
+      return { ok: true, state: next };
+    }
+    case "->TAG": {
+      if (next.stack.length < 2) return underflow(state, "->TAG", 2);
+      const tagObject = next.stack.pop() as RplObject;
+      const value = next.stack.pop() as RplObject;
+      if (tagObject.kind !== "string" && tagObject.kind !== "quotedName") {
+        return typeError(state, "->TAG requires a string or quoted name tag");
+      }
+      next.stack.push({ kind: "tagged", tag: tagObject.kind === "string" ? tagObject.value : tagObject.name, value: cloneObject(value) });
       return { ok: true, state: next };
     }
     case "TRUE":

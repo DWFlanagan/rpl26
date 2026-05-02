@@ -14,7 +14,7 @@ It is not an HP ROM emulator and does not execute HP firmware. The goal is to bu
 - `npm run repl`: start a persistent interactive session.
 - `npm run mcp`: run the MCP stdio server after building.
 
-The REPL supports `.stack`, `.vars`, `.trace`, `.clear`, and `.exit`.
+The REPL supports `.stack`, `.vars`, `.trace`, `.words`, `.help`, `.clear`, and `.exit`.
 
 ## Milestone 1 Scope
 
@@ -26,6 +26,8 @@ The REPL supports `.stack`, `.vars`, `.trace`, `.clear`, and `.exit`.
 - Local variables through `->`, such as `5 << -> x << x x * >> >> EVAL`.
 - Everyday stack programming words: `DUP2`, `DROP2`, `ROT`, `PICK`, `->LIST`, `LIST->`, `SIZE`, `GET`, and comparisons.
 - HP-style program control flow: `IF THEN ELSE END`, `START NEXT`, `START STEP`, `FOR NEXT`, `FOR STEP`, `WHILE REPEAT END`, and `DO UNTIL END`.
+- Practical object words: `HEAD`, `TRIL`, `SUB`, `POS`, `CHR`, `NUM`, `->STR`, and `->TAG`.
+- Word discovery through `.words` and `.help WORD` in the REPL.
 - Persistent calculator session.
 - MCP tools: `execute`, `get_stack`, `get_variables`, `clear`, `get_trace`.
 
@@ -43,6 +45,17 @@ The REPL supports `.stack`, `.vars`, `.trace`, `.clear`, and `.exit`.
 << 0 1 3 START 1 + NEXT >> EVAL
 << 1 3 FOR i i NEXT >> EVAL
 << 3 WHILE DUP 0 > REPEAT 1 - END >> EVAL
+"abc" HEAD
+"abc" TRIL
+"abcd" 2 3 SUB
+42 "answer" ->TAG
+```
+
+In the REPL:
+
+```rpl
+.words
+.help HEAD
 ```
 
 ## Clean-Room Rule

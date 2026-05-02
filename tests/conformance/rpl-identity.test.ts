@@ -44,6 +44,19 @@ describe("RPL identity examples", () => {
       "conditional selects true branch",
       "<< IF 2 3 < THEN 10 ELSE 20 END >> EVAL",
       [{ level: 1, value: { kind: "real", value: 10 } }]
+    ],
+    [
+      "string head and rest",
+      "\"abc\" HEAD \"abc\" TRIL",
+      [
+        { level: 2, value: { kind: "string", value: "a" } },
+        { level: 1, value: { kind: "string", value: "bc" } }
+      ]
+    ],
+    [
+      "tagged object",
+      "42 \"answer\" ->TAG",
+      [{ level: 1, value: { kind: "tagged", tag: "answer", value: { kind: "real", value: 42 } } }]
     ]
   ])("%s", (_label, input, expectedStack) => {
     const session = new CalculatorSession();

@@ -19,6 +19,7 @@ export type RplObject =
   | { kind: "quotedName"; name: string; source?: string }
   | { kind: "program"; body: RplObject[]; source?: string }
   | { kind: "list"; items: RplObject[]; source?: string }
+  | { kind: "tagged"; tag: string; value: RplObject; source?: string }
   | { kind: "string"; value: string; source?: string };
 
 export type ParseResult =
