@@ -1,5 +1,23 @@
 import type { CalculatorState, EvaluateResult, EvaluationObserver, RplObject } from "./types.js";
 
+export const BUILTIN_NAMES = [
+  "EVAL",
+  "STO",
+  "+",
+  "-",
+  "*",
+  "/",
+  "NEG",
+  "INV",
+  "SQ",
+  "SQRT",
+  "DUP",
+  "DROP",
+  "SWAP",
+  "OVER",
+  "CLEAR"
+];
+
 export const cloneObject = (object: RplObject): RplObject => {
   switch (object.kind) {
     case "program":

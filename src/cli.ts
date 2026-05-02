@@ -1,5 +1,6 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { BUILTIN_NAMES } from "./core.js";
 import { CalculatorSession } from "./session.js";
 import type { ExecuteResult, RplObject, StackEntry } from "./types.js";
 
@@ -7,11 +8,14 @@ export type CliResult = {
   exitCode: number;
   stdout: string;
   stderr: string;
+  session?: CalculatorSession;
 };
 
 type CliMode = "calc" | "repl";
+type CompletionResult = [string[], string];
 
 const usage = 'Usage: rpn50 "2 3 +"';
+const DOT_COMMANDS = [".stack", ".vars", ".trace", ".clear", ".exit", ".quit"];
 
 function formatObject(object: RplObject): string {
   switch (object.kind) {
@@ -44,6 +48,18 @@ function formatVariables(variables: Record<string, RplObject>): string {
 function formatTrace(result: ExecuteResult): string {
   if (result.trace.length === 0) return "Trace: <empty>";
   return result.trace.map((entry) => `${entry.ok ? "ok" : "error"} ${entry.source}`).join("\n");
+}
+
+function currentWord(line: string): string {
+  return line.match(/\S+$/)?.[0] ?? "";
+}
+
+export function completeReplInput(line: string, session: CalculatorSession): CompletionResult {
+  const word = currentWord(line);
+  const variableNames = Object.keys(session.getVariables());
+  const candidates = word.startsWith(".") ? DOT_COMMANDS : [...variableNames, ...BUILTIN_NAMES];
+  const matches = [...new Set(candidates)].filter((candidate) => candidate.startsWith(word)).sort();
+  return [matches.length > 0 ? matches : candidates, word];
 }
 
 export function runCli(args: string[]): CliResult {
@@ -109,13 +125,19 @@ export function runReplLines(lines: string[]): CliResult {
   return {
     exitCode: 0,
     stdout: outputLines.join("\n"),
-    stderr: ""
+    stderr: "",
+    session
   };
 }
 
 export async function runInteractiveRepl(): Promise<void> {
   const session = new CalculatorSession();
-  const repl = createInterface({ input, output, prompt: "rpn50> " });
+  const repl = createInterface({
+    input,
+    output,
+    prompt: "rpn50> ",
+    completer: (line) => completeReplInput(line, session)
+  });
 
   console.log("rpn50 REPL. Commands: .stack .vars .trace .clear .exit");
   repl.prompt();

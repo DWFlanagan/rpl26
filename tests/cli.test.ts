@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatStack, runCli, runReplLines } from "../src/cli.js";
+import { completeReplInput, formatStack, runCli, runReplLines } from "../src/cli.js";
 
 describe("CLI", () => {
   it("executes one RPL command line and prints a readable stack", () => {
@@ -56,5 +56,16 @@ describe("CLI", () => {
       "Cleared.",
       "Stack: <empty>"
     ]);
+  });
+
+  it("completes dot commands, builtins, and stored variable names", () => {
+    const result = runReplLines(["<< 1 + >> 'INC' STO"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.session).toBeDefined();
+    const session = result.session!;
+    expect(completeReplInput(".st", session)).toEqual([[".stack"], ".st"]);
+    expect(completeReplInput("SQ", session)).toEqual([["SQ", "SQRT"], "SQ"]);
+    expect(completeReplInput("IN", session)).toEqual([["INC", "INV"], "IN"]);
   });
 });
