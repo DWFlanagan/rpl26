@@ -6,6 +6,7 @@
   "description": "Clean-room User RPL-inspired persistent object-stack calculator with MCP access.",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "calc": "node dist/src/cli.js",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "mcp": "node dist/src/mcp/server.js"
