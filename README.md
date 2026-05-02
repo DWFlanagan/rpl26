@@ -24,7 +24,8 @@ The REPL supports `.stack`, `.vars`, `.trace`, `.clear`, and `.exit`.
 - Program evaluation through `EVAL`.
 - Global variables through `STO`.
 - Local variables through `->`, such as `5 << -> x << x x * >> >> EVAL`.
-- Everyday stack programming words: `DUP2`, `DROP2`, `ROT`, `PICK`, `->LIST`, `LIST->`, `SIZE`, `GET`, comparisons, and `IF THEN ELSE END`.
+- Everyday stack programming words: `DUP2`, `DROP2`, `ROT`, `PICK`, `->LIST`, `LIST->`, `SIZE`, `GET`, and comparisons.
+- HP-style program control flow: `IF THEN ELSE END`, `START NEXT`, `START STEP`, `FOR NEXT`, `FOR STEP`, `WHILE REPEAT END`, and `DO UNTIL END`.
 - Persistent calculator session.
 - MCP tools: `execute`, `get_stack`, `get_variables`, `clear`, `get_trace`.
 
@@ -38,7 +39,10 @@ The REPL supports `.stack`, `.vars`, `.trace`, `.clear`, and `.exit`.
 1 2 DUP2
 1 2 3 3 ->LIST
 2 3 <
-<< 2 3 < IF THEN 10 ELSE 20 END >> EVAL
+<< IF 2 3 < THEN 10 ELSE 20 END >> EVAL
+<< 0 1 3 START 1 + NEXT >> EVAL
+<< 1 3 FOR i i NEXT >> EVAL
+<< 3 WHILE DUP 0 > REPEAT 1 - END >> EVAL
 ```
 
 ## Clean-Room Rule

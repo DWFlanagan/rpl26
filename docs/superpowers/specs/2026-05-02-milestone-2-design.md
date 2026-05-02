@@ -6,6 +6,8 @@ Milestone 2 should be audited against HP 48 User RPL behavior before the command
 
 The current Milestone 2 implementation is a useful provisional runtime slice. Any command whose semantics differ from HP 48 User RPL should be corrected, documented as an intentional divergence, or moved out of the compatibility path.
 
+Milestone 3 corrected the conditional model to HP-style `IF test-clause THEN ... END` syntax. The Milestone 2 conditional notes below describe the provisional implementation that existed before the HP 48G control-flow audit.
+
 ## Purpose
 
 Milestone 2 grows `rpl26` from an RPL identity slice into a small everyday stack-programming environment. It adds practical stack words, basic list operations, comparison words that produce truth values, and a first conditional form.

@@ -35,7 +35,15 @@ export const BUILTIN_NAMES = [
   "IF",
   "THEN",
   "ELSE",
-  "END"
+  "END",
+  "START",
+  "NEXT",
+  "STEP",
+  "FOR",
+  "WHILE",
+  "REPEAT",
+  "DO",
+  "UNTIL"
 ];
 
 export const cloneObject = (object: RplObject): RplObject => {
@@ -64,6 +72,8 @@ const real = (value: number): RplObject => ({ kind: "real", value });
 
 const sourceOf = (object: RplObject): string => object.source ?? object.kind;
 const isName = (object: RplObject, name: string): boolean => object.kind === "name" && object.name === name;
+const nameOf = (object: RplObject): string | undefined => (object.kind === "name" ? object.name : undefined);
+const LOOP_LIMIT = 10000;
 
 const typeMismatch = (state: CalculatorState, command: string): EvaluateResult => ({
   ok: false,
@@ -164,6 +174,14 @@ function evaluateProgram(
         ? bindLocals(current, program.body, index, locals, observer)
         : object.kind === "name" && object.name === "IF"
           ? evaluateConditional(current, program.body, index, locals, observer)
+          : object.kind === "name" && object.name === "START"
+            ? evaluateStartLoop(current, program.body, index, locals, observer)
+            : object.kind === "name" && object.name === "FOR"
+              ? evaluateForLoop(current, program.body, index, locals, observer)
+              : object.kind === "name" && object.name === "WHILE"
+                ? evaluateWhileLoop(current, program.body, index, locals, observer)
+                : object.kind === "name" && object.name === "DO"
+                  ? evaluateDoLoop(current, program.body, index, locals, observer)
           : undefined;
     const result = special?.result ?? evaluateObject(current, object, observer, locals);
     current = result.state;
@@ -189,60 +207,270 @@ function evaluateConditional(
   locals: LocalBindings,
   observer?: EvaluationObserver
 ): { result: EvaluateResult; nextIndex: number } {
-  if (!isName(body[ifIndex + 1], "THEN")) {
+  const thenIndex = findTopLevelMarker(body, ifIndex + 1, ["THEN"]);
+  if (thenIndex === undefined) {
     return {
       result: invalidOperation(state, "IF requires THEN"),
       nextIndex: ifIndex
     };
   }
 
-  const branchEnd = findConditionalEnd(body, ifIndex + 2);
+  const branchEnd = findTopLevelMarker(body, thenIndex + 1, ["ELSE", "END"]);
   if (branchEnd === undefined) {
     return {
       result: invalidOperation(state, "IF requires END"),
       nextIndex: body.length - 1
     };
   }
-
-  if (state.stack.length < 1) {
-    return { result: underflow(state, "IF", 1), nextIndex: branchEnd.endIndex };
+  const elseIndex = isName(body[branchEnd], "ELSE") ? branchEnd : undefined;
+  const endIndex = elseIndex === undefined ? branchEnd : findTopLevelMarker(body, elseIndex + 1, ["END"]);
+  if (endIndex === undefined) {
+    return {
+      result: invalidOperation(state, "IF requires END"),
+      nextIndex: body.length - 1
+    };
   }
 
-  const next = cloneState(state);
-  const condition = next.stack.pop() as RplObject;
-  if (condition.kind !== "real") {
-    return { result: typeError(state, "IF requires a real truth value"), nextIndex: branchEnd.endIndex };
-  }
+  const testResult = evaluateProgram(state, { kind: "program", body: body.slice(ifIndex + 1, thenIndex) }, observer, locals);
+  if (!testResult.ok) return { result: testResult, nextIndex: endIndex };
 
-  const trueBody = body.slice(ifIndex + 2, branchEnd.elseIndex ?? branchEnd.endIndex);
-  const falseBody = branchEnd.elseIndex === undefined ? [] : body.slice(branchEnd.elseIndex + 1, branchEnd.endIndex);
-  const selectedBody = condition.value !== 0 ? trueBody : falseBody;
-  const result = evaluateProgram(next, { kind: "program", body: selectedBody }, observer, locals);
-  if (!result.ok) return { result: { ...result, state: cloneState(state) }, nextIndex: branchEnd.endIndex };
-  return { result, nextIndex: branchEnd.endIndex };
+  const truth = popTruth(testResult.state, "IF");
+  if (!truth.ok) return { result: truth.result, nextIndex: endIndex };
+
+  const trueBody = body.slice(thenIndex + 1, elseIndex ?? endIndex);
+  const falseBody = elseIndex === undefined ? [] : body.slice(elseIndex + 1, endIndex);
+  const selectedBody = truth.value !== 0 ? trueBody : falseBody;
+  const result = evaluateProgram(truth.state, { kind: "program", body: selectedBody }, observer, locals);
+  return { result, nextIndex: endIndex };
 }
 
-function findConditionalEnd(body: RplObject[], startIndex: number): { elseIndex?: number; endIndex: number } | undefined {
+function findTopLevelMarker(body: RplObject[], startIndex: number, markers: string[]): number | undefined {
   let depth = 0;
-  let elseIndex: number | undefined;
 
   for (let index = startIndex; index < body.length; index += 1) {
-    const object = body[index];
-    if (isName(object, "IF")) {
+    const name = nameOf(body[index]);
+    if (name === undefined) continue;
+    if (depth === 0 && markers.includes(name)) return index;
+
+    if (isBlockOpener(name)) {
       depth += 1;
       continue;
     }
-    if (isName(object, "END")) {
-      if (depth === 0) return { elseIndex, endIndex: index };
+    if (depth > 0 && isBlockCloser(name)) {
       depth -= 1;
-      continue;
-    }
-    if (depth === 0 && elseIndex === undefined && isName(object, "ELSE")) {
-      elseIndex = index;
     }
   }
 
   return undefined;
+}
+
+function isBlockOpener(name: string): boolean {
+  return name === "IF" || name === "START" || name === "FOR" || name === "WHILE" || name === "DO";
+}
+
+function isBlockCloser(name: string): boolean {
+  return name === "END" || name === "NEXT" || name === "STEP";
+}
+
+function popTruth(state: CalculatorState, command: string): { ok: true; state: CalculatorState; value: number } | { ok: false; result: EvaluateResult } {
+  if (state.stack.length < 1) return { ok: false, result: underflow(state, command, 1) };
+  const next = cloneState(state);
+  const condition = next.stack.pop() as RplObject;
+  if (condition.kind !== "real") {
+    return { ok: false, result: typeError(state, `${command} requires a real truth value`) };
+  }
+  return { ok: true, state: next, value: condition.value };
+}
+
+function popReal(state: CalculatorState, command: string): { ok: true; state: CalculatorState; value: number } | { ok: false; result: EvaluateResult } {
+  if (state.stack.length < 1) return { ok: false, result: underflow(state, command, 1) };
+  const next = cloneState(state);
+  const object = next.stack.pop() as RplObject;
+  if (object.kind !== "real") return { ok: false, result: typeError(state, `${command} requires a real argument`) };
+  return { ok: true, state: next, value: object.value };
+}
+
+function popLoopBounds(
+  state: CalculatorState,
+  command: string
+): { ok: true; state: CalculatorState; start: number; finish: number } | { ok: false; result: EvaluateResult } {
+  if (state.stack.length < 2) return { ok: false, result: underflow(state, command, 2) };
+  const next = cloneState(state);
+  const finish = next.stack.pop() as RplObject;
+  const start = next.stack.pop() as RplObject;
+  if (start.kind !== "real" || finish.kind !== "real") {
+    return { ok: false, result: typeError(state, `${command} requires real loop bounds`) };
+  }
+  return { ok: true, state: next, start: start.value, finish: finish.value };
+}
+
+function shouldRepeat(counter: number, finish: number, step: number): boolean {
+  return step > 0 ? counter <= finish : counter >= finish;
+}
+
+function evaluateStartLoop(
+  state: CalculatorState,
+  body: RplObject[],
+  startIndex: number,
+  locals: LocalBindings,
+  observer?: EvaluationObserver
+): { result: EvaluateResult; nextIndex: number } {
+  const endIndex = findTopLevelMarker(body, startIndex + 1, ["NEXT", "STEP"]);
+  if (endIndex === undefined) {
+    return { result: invalidOperation(state, "START requires NEXT or STEP"), nextIndex: body.length - 1 };
+  }
+
+  const bounds = popLoopBounds(state, "START");
+  if (!bounds.ok) return { result: bounds.result, nextIndex: endIndex };
+
+  const loopBody = body.slice(startIndex + 1, endIndex);
+  const stepped = isName(body[endIndex], "STEP");
+  let current = bounds.state;
+  let counter = bounds.start;
+
+  for (let iterations = 0; iterations < LOOP_LIMIT; iterations += 1) {
+    const bodyResult = evaluateProgram(current, { kind: "program", body: loopBody }, observer, locals);
+    if (!bodyResult.ok) return { result: bodyResult, nextIndex: endIndex };
+    current = bodyResult.state;
+
+    if (!stepped) {
+      counter += 1;
+      if (!shouldRepeat(counter, bounds.finish, 1)) return { result: { ok: true, state: current }, nextIndex: endIndex };
+      continue;
+    }
+
+    const step = popReal(current, "STEP");
+    if (!step.ok) return { result: step.result, nextIndex: endIndex };
+    if (step.value === 0) return { result: invalidOperation(current, "STEP requires a non-zero increment"), nextIndex: endIndex };
+    current = step.state;
+    counter += step.value;
+    if (!shouldRepeat(counter, bounds.finish, step.value)) return { result: { ok: true, state: current }, nextIndex: endIndex };
+  }
+
+  return { result: invalidOperation(state, "Loop iteration limit exceeded"), nextIndex: endIndex };
+}
+
+function evaluateForLoop(
+  state: CalculatorState,
+  body: RplObject[],
+  forIndex: number,
+  locals: LocalBindings,
+  observer?: EvaluationObserver
+): { result: EvaluateResult; nextIndex: number } {
+  const counterName = body[forIndex + 1];
+  if (counterName?.kind !== "name") {
+    return { result: invalidOperation(state, "FOR requires a loop variable name"), nextIndex: forIndex };
+  }
+
+  const endIndex = findTopLevelMarker(body, forIndex + 2, ["NEXT", "STEP"]);
+  if (endIndex === undefined) {
+    return { result: invalidOperation(state, "FOR requires NEXT or STEP"), nextIndex: body.length - 1 };
+  }
+
+  const bounds = popLoopBounds(state, "FOR");
+  if (!bounds.ok) return { result: bounds.result, nextIndex: endIndex };
+
+  const loopBody = body.slice(forIndex + 2, endIndex);
+  const stepped = isName(body[endIndex], "STEP");
+  let current = bounds.state;
+  let counter = bounds.start;
+
+  for (let iterations = 0; iterations < LOOP_LIMIT; iterations += 1) {
+    const bodyResult = evaluateProgram(current, { kind: "program", body: loopBody }, observer, {
+      ...locals,
+      [counterName.name]: real(counter)
+    });
+    if (!bodyResult.ok) return { result: bodyResult, nextIndex: endIndex };
+    current = bodyResult.state;
+
+    if (!stepped) {
+      counter += 1;
+      if (!shouldRepeat(counter, bounds.finish, 1)) return { result: { ok: true, state: current }, nextIndex: endIndex };
+      continue;
+    }
+
+    const step = popReal(current, "STEP");
+    if (!step.ok) return { result: step.result, nextIndex: endIndex };
+    if (step.value === 0) return { result: invalidOperation(current, "STEP requires a non-zero increment"), nextIndex: endIndex };
+    current = step.state;
+    counter += step.value;
+    if (!shouldRepeat(counter, bounds.finish, step.value)) return { result: { ok: true, state: current }, nextIndex: endIndex };
+  }
+
+  return { result: invalidOperation(state, "Loop iteration limit exceeded"), nextIndex: endIndex };
+}
+
+function evaluateWhileLoop(
+  state: CalculatorState,
+  body: RplObject[],
+  whileIndex: number,
+  locals: LocalBindings,
+  observer?: EvaluationObserver
+): { result: EvaluateResult; nextIndex: number } {
+  const repeatIndex = findTopLevelMarker(body, whileIndex + 1, ["REPEAT"]);
+  if (repeatIndex === undefined) {
+    return { result: invalidOperation(state, "WHILE requires REPEAT"), nextIndex: whileIndex };
+  }
+
+  const endIndex = findTopLevelMarker(body, repeatIndex + 1, ["END"]);
+  if (endIndex === undefined) {
+    return { result: invalidOperation(state, "WHILE requires END"), nextIndex: body.length - 1 };
+  }
+
+  const testBody = body.slice(whileIndex + 1, repeatIndex);
+  const loopBody = body.slice(repeatIndex + 1, endIndex);
+  let current = cloneState(state);
+
+  for (let iterations = 0; iterations < LOOP_LIMIT; iterations += 1) {
+    const testResult = evaluateProgram(current, { kind: "program", body: testBody }, observer, locals);
+    if (!testResult.ok) return { result: testResult, nextIndex: endIndex };
+    const truth = popTruth(testResult.state, "WHILE");
+    if (!truth.ok) return { result: truth.result, nextIndex: endIndex };
+    current = truth.state;
+    if (truth.value === 0) return { result: { ok: true, state: current }, nextIndex: endIndex };
+
+    const bodyResult = evaluateProgram(current, { kind: "program", body: loopBody }, observer, locals);
+    if (!bodyResult.ok) return { result: bodyResult, nextIndex: endIndex };
+    current = bodyResult.state;
+  }
+
+  return { result: invalidOperation(state, "Loop iteration limit exceeded"), nextIndex: endIndex };
+}
+
+function evaluateDoLoop(
+  state: CalculatorState,
+  body: RplObject[],
+  doIndex: number,
+  locals: LocalBindings,
+  observer?: EvaluationObserver
+): { result: EvaluateResult; nextIndex: number } {
+  const untilIndex = findTopLevelMarker(body, doIndex + 1, ["UNTIL"]);
+  if (untilIndex === undefined) {
+    return { result: invalidOperation(state, "DO requires UNTIL"), nextIndex: doIndex };
+  }
+
+  const endIndex = findTopLevelMarker(body, untilIndex + 1, ["END"]);
+  if (endIndex === undefined) {
+    return { result: invalidOperation(state, "DO requires END"), nextIndex: body.length - 1 };
+  }
+
+  const loopBody = body.slice(doIndex + 1, untilIndex);
+  const testBody = body.slice(untilIndex + 1, endIndex);
+  let current = cloneState(state);
+
+  for (let iterations = 0; iterations < LOOP_LIMIT; iterations += 1) {
+    const bodyResult = evaluateProgram(current, { kind: "program", body: loopBody }, observer, locals);
+    if (!bodyResult.ok) return { result: bodyResult, nextIndex: endIndex };
+
+    const testResult = evaluateProgram(bodyResult.state, { kind: "program", body: testBody }, observer, locals);
+    if (!testResult.ok) return { result: testResult, nextIndex: endIndex };
+    const truth = popTruth(testResult.state, "DO");
+    if (!truth.ok) return { result: truth.result, nextIndex: endIndex };
+    current = truth.state;
+    if (truth.value !== 0) return { result: { ok: true, state: current }, nextIndex: endIndex };
+  }
+
+  return { result: invalidOperation(state, "Loop iteration limit exceeded"), nextIndex: endIndex };
 }
 
 function bindLocals(

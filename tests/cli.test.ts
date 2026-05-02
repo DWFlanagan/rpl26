@@ -67,5 +67,7 @@ describe("CLI", () => {
     expect(completeReplInput(".st", session)).toEqual([[".stack"], ".st"]);
     expect(completeReplInput("SQ", session)).toEqual([["SQ", "SQRT"], "SQ"]);
     expect(completeReplInput("IN", session)).toEqual([["INC", "INV"], "IN"]);
+    expect(completeReplInput("ST", session)).toEqual([["START", "STEP", "STO"], "ST"]);
+    expect(completeReplInput("WH", session)).toEqual([["WHILE"], "WH"]);
   });
 });

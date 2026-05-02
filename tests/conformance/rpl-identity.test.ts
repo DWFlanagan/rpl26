@@ -42,7 +42,7 @@ describe("RPL identity examples", () => {
     ],
     [
       "conditional selects true branch",
-      "<< 2 3 < IF THEN 10 ELSE 20 END >> EVAL",
+      "<< IF 2 3 < THEN 10 ELSE 20 END >> EVAL",
       [{ level: 1, value: { kind: "real", value: 10 } }]
     ]
   ])("%s", (_label, input, expectedStack) => {
