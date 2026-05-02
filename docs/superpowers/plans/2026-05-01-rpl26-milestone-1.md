@@ -1,4 +1,4 @@
-# RPN50 Milestone 1 Implementation Plan
+# rpl26 Milestone 1 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -86,7 +86,7 @@ Create `package.json`:
 
 ```json
 {
-  "name": "rpn50",
+  "name": "rpl26",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -1180,9 +1180,9 @@ Expected: PASS.
 Create `README.md`:
 
 ```md
-# rpn50
+# rpl26
 
-`rpn50` is a clean-room User RPL-inspired calculator engine with a persistent object stack and an MCP interface.
+`rpl26` is a clean-room User RPL-inspired calculator engine with a persistent object stack and an MCP interface.
 
 It is not an HP ROM emulator and does not execute HP firmware. The goal is to build a small Reverse Polish Lisp-style runtime with typed objects, executable programs, variables, and traceable stack evaluation.
 
@@ -1291,7 +1291,7 @@ export function createCalculatorTools(session = new CalculatorSession()) {
 }
 
 export function createServer(session = new CalculatorSession()): McpServer {
-  const server = new McpServer({ name: "rpn50", version: "0.1.0" });
+  const server = new McpServer({ name: "rpl26", version: "0.1.0" });
   const tools = createCalculatorTools(session);
 
   server.tool("execute", { input: z.string() }, async (args) => ({

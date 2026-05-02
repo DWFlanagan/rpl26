@@ -21,7 +21,7 @@ const textResult = (value: unknown) => ({
 });
 
 export function createServer(session = new CalculatorSession()): McpServer {
-  const server = new McpServer({ name: "rpn50", version: "0.1.0" });
+  const server = new McpServer({ name: "rpl26", version: "0.1.0" });
   const tools = createCalculatorTools(session);
 
   server.tool("execute", { input: z.string() }, async (args) => textResult(await tools.execute(args)));

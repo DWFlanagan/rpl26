@@ -1,6 +1,6 @@
-# rpn50
+# rpl26
 
-`rpn50` is a clean-room User RPL-inspired calculator engine with a persistent object stack and an MCP interface.
+`rpl26` is a clean-room HP 48 User RPL-inspired calculator engine with a persistent object stack and an MCP interface.
 
 It is not an HP ROM emulator and does not execute HP firmware. The goal is to build a small Reverse Polish Lisp-style runtime with typed objects, executable programs, variables, and traceable stack evaluation.
 

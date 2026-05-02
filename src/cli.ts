@@ -14,7 +14,7 @@ export type CliResult = {
 type CliMode = "calc" | "repl";
 type CompletionResult = [string[], string];
 
-const usage = 'Usage: rpn50 "2 3 +"';
+const usage = 'Usage: rpl26 "2 3 +"';
 const DOT_COMMANDS = [".stack", ".vars", ".trace", ".clear", ".exit", ".quit"];
 
 function formatObject(object: RplObject): string {
@@ -135,11 +135,11 @@ export async function runInteractiveRepl(): Promise<void> {
   const repl = createInterface({
     input,
     output,
-    prompt: "rpn50> ",
+    prompt: "rpl26> ",
     completer: (line) => completeReplInput(line, session)
   });
 
-  console.log("rpn50 REPL. Commands: .stack .vars .trace .clear .exit");
+  console.log("rpl26 REPL. Commands: .stack .vars .trace .clear .exit");
   repl.prompt();
 
   for await (const line of repl) {

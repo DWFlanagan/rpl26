@@ -2,7 +2,7 @@
 
 ## Project Name
 
-The working project name is `rpl26`. Older repository paths and package metadata may still say `rpn50` until a separate rename pass updates code, scripts, and docs together.
+The project name is `rpl26`. The local checkout directory may still use an older name, but code, scripts, package metadata, and planning docs should use `rpl26`.
 
 ## Purpose
 

@@ -30,7 +30,7 @@ describe("CLI", () => {
     expect(result).toEqual({
       exitCode: 1,
       stdout: "",
-      stderr: "Usage: rpn50 \"2 3 +\""
+      stderr: "Usage: rpl26 \"2 3 +\""
     });
   });
 
