@@ -9,7 +9,12 @@ It is not an HP ROM emulator and does not execute HP firmware. The goal is to bu
 - `npm test`: run tests.
 - `npm run typecheck`: run TypeScript checks.
 - `npm run build`: compile TypeScript.
+- `npm run calc -- "2 3 +"`: execute one command line and print the stack.
+- `npm run calc -- --json "2 3 +"`: execute one command line and print the full JSON result.
+- `npm run repl`: start a persistent interactive session.
 - `npm run mcp`: run the MCP stdio server after building.
+
+The REPL supports `.stack`, `.vars`, `.trace`, `.clear`, and `.exit`.
 
 ## Milestone 1 Scope
 
