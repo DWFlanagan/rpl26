@@ -42,7 +42,7 @@
 - Reference: `docs/superpowers/specs/2026-05-02-hp48g-control-flow-notes.md`
 - Reference: `docs/superpowers/specs/2026-05-02-hp48g-object-library-notes.md`
 
-- [ ] **Step 1: Locate manual anchors for implemented behavior**
+- [x] **Step 1: Locate manual anchors for implemented behavior**
 
 Run:
 
@@ -52,7 +52,7 @@ rg -n "DUP|DROP|SWAP|OVER|CLEAR|STO|EVAL|IF|THEN|ELSE|START|NEXT|STEP|FOR|WHILE|
 
 Expected: local source anchors for each implemented command family. Do not copy manual text into tracked files.
 
-- [ ] **Step 2: Write conformance clean-room notes**
+- [x] **Step 2: Write conformance clean-room notes**
 
 Create `docs/superpowers/specs/2026-05-02-hp48g-conformance-notes.md`:
 
@@ -118,7 +118,7 @@ Implementation consequences: fixtures should include supported examples and expl
 Uncertainty or divergence: HP character set fidelity and byte-perfect HP object serialization are intentional divergences for now.
 ```
 
-- [ ] **Step 3: Self-review notes**
+- [x] **Step 3: Self-review notes**
 
 Run:
 
@@ -128,7 +128,17 @@ rg -n "TODO|TBD|copy extended|quote the manual" docs/superpowers/specs/2026-05-0
 
 Expected: no output.
 
-- [ ] **Step 4: Commit manual notes**
+- [x] **Step 4: Run focused verification**
+
+Run:
+
+```bash
+npm test -- tests/conformance/rpl-identity.test.ts tests/object-library.test.ts tests/control-flow.test.ts
+```
+
+Expected: focused conformance-related tests pass.
+
+- [x] **Step 5: Commit manual notes**
 
 Run:
 
