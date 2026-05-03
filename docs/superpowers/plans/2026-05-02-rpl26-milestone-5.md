@@ -662,7 +662,7 @@ Expected: commit succeeds.
 - Modify only files required to fix verification failures.
 - Modify: `docs/superpowers/plans/2026-05-02-rpl26-milestone-5.md`
 
-- [ ] **Step 1: Run full tests**
+- [x] **Step 1: Run full tests**
 
 Run:
 
@@ -672,7 +672,7 @@ npm test
 
 Expected: PASS.
 
-- [ ] **Step 2: Run typecheck**
+- [x] **Step 2: Run typecheck**
 
 Run:
 
@@ -682,7 +682,7 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 3: Run build**
+- [x] **Step 3: Run build**
 
 Run:
 
@@ -692,7 +692,7 @@ npm run build
 
 Expected: PASS.
 
-- [ ] **Step 4: Run strict CLI smoke check**
+- [x] **Step 4: Run strict CLI smoke check**
 
 Run:
 
@@ -707,7 +707,7 @@ Expected: output includes:
 1: "bc"
 ```
 
-- [ ] **Step 5: Commit plan completion updates**
+- [x] **Step 5: Commit plan completion updates**
 
 Run:
 
