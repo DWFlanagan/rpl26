@@ -508,7 +508,7 @@ Expected: commit succeeds.
 - Modify: `tests/conformance/fixtures.ts`
 - Modify: runtime and focused tests only for selected `needs-fix` cases.
 
-- [ ] **Step 1: Add non-supported fixture examples**
+- [x] **Step 1: Add non-supported fixture examples**
 
 Append these fixtures to `CONFORMANCE_FIXTURES`:
 
@@ -531,7 +531,7 @@ Append these fixtures to `CONFORMANCE_FIXTURES`:
   }
 ```
 
-- [ ] **Step 2: Add metadata tests for the visible triage corpus**
+- [x] **Step 2: Add metadata tests for the visible triage corpus**
 
 Append to `tests/conformance/manual-derived.test.ts`:
 
@@ -550,7 +550,7 @@ describe("manual-derived non-supported conformance fixtures", () => {
 });
 ```
 
-- [ ] **Step 3: Run conformance tests**
+- [x] **Step 3: Run conformance tests**
 
 Run:
 
@@ -560,7 +560,7 @@ npm test -- tests/conformance/manual-derived.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 4: Audit for real needs-fix cases**
+- [x] **Step 4: Audit for real needs-fix cases**
 
 Audit implemented behavior while reading the manual notes. Choose one path:
 
@@ -576,7 +576,7 @@ Path B, if no clear drift case is selected for Milestone 5:
 
 Keep only `deferred` and `intentional-divergence` examples as the visible triage corpus.
 
-- [ ] **Step 5: Run conformance tests**
+- [x] **Step 5: Run conformance tests**
 
 Run:
 
@@ -586,7 +586,7 @@ npm test -- tests/conformance/manual-derived.test.ts
 
 Expected: PASS with no unresolved `needs-fix` fixture.
 
-- [ ] **Step 6: Commit triage fixtures and any drift fix**
+- [x] **Step 6: Commit triage fixtures and any drift fix**
 
 Run:
 

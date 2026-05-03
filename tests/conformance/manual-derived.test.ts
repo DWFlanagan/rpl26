@@ -114,3 +114,16 @@ describe("manual-derived supported conformance fixtures", () => {
     }
   });
 });
+
+describe("manual-derived non-supported conformance fixtures", () => {
+  it("keeps deferred and divergent examples visible", () => {
+    expect(CONFORMANCE_FIXTURES.some((fixture) => fixture.status === "deferred")).toBe(true);
+    expect(CONFORMANCE_FIXTURES.some((fixture) => fixture.status === "intentional-divergence")).toBe(true);
+  });
+
+  it("does not leave unresolved needs-fix fixtures in the passing corpus", () => {
+    const needsFix = CONFORMANCE_FIXTURES.filter((fixture) => fixture.status === "needs-fix");
+
+    expect(needsFix).toEqual([]);
+  });
+});

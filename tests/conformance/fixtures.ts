@@ -135,5 +135,21 @@ export const CONFORMANCE_FIXTURES: ConformanceFixture[] = [
     status: "supported",
     sourceNote: note("variables-and-program-evaluation-examples"),
     expectedError: { code: "UndefinedName", message: "Undefined name: NO_SUCH_NAME" }
+  },
+  {
+    id: "deferred-units-object",
+    title: "unit objects remain outside the current object model",
+    input: "1_m",
+    status: "deferred",
+    sourceNote: note("object-library-examples"),
+    reason: "Units are explicitly reserved for Milestone 9 and require their own object model."
+  },
+  {
+    id: "divergence-hp-character-set",
+    title: "CHR and NUM use JavaScript code points for now",
+    input: "65 CHR NUM",
+    status: "intentional-divergence",
+    sourceNote: objectNote("character-and-string-conversion"),
+    reason: "Milestone 4 intentionally uses JavaScript code points until an HP 48 character table is audited."
   }
 ];
