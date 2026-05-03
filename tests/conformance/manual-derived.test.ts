@@ -1,6 +1,29 @@
 import { describe, expect, it } from "vitest";
 import { CONFORMANCE_FIXTURES } from "./fixtures.js";
-import { errorMatches, runSupportedFixture, validateFixtures } from "./runner.js";
+import { runSupportedFixture, validateFixtures } from "./runner.js";
+
+const TASK_3_SUPPORTED_FIXTURE_IDS = [
+  "m1-real-arithmetic-add",
+  "m1-stack-swap",
+  "m1-program-eval",
+  "m1-stored-program",
+  "m2-list-roundtrip",
+  "m3-if-true-branch",
+  "m3-for-loop-values",
+  "m4-string-head-tril",
+  "m4-tagged-object",
+  "error-undefined-name"
+] as const;
+
+const supportedFixtures = CONFORMANCE_FIXTURES.filter((fixture) => fixture.status === "supported");
+
+const fixtureContext = (fixture: (typeof supportedFixtures)[number], result: unknown): string =>
+  [
+    `${fixture.id}: ${fixture.title}`,
+    `sourceNote: ${fixture.sourceNote}`,
+    `input: ${fixture.input}`,
+    `actual: ${JSON.stringify(result, null, 2)}`
+  ].join("\n");
 
 describe("manual-derived conformance fixture metadata", () => {
   it("accepts the checked-in fixture corpus", () => {
@@ -64,21 +87,30 @@ describe("manual-derived conformance fixture metadata", () => {
 });
 
 describe("manual-derived supported conformance fixtures", () => {
-  it.each(CONFORMANCE_FIXTURES.filter((fixture) => fixture.status === "supported"))("$id: $title", (fixture) => {
+  it("includes the expected Task 3 supported fixture corpus", () => {
+    expect(supportedFixtures.map((fixture) => fixture.id)).toEqual(TASK_3_SUPPORTED_FIXTURE_IDS);
+  });
+
+  it.each(supportedFixtures)("$id: $title", (fixture) => {
     const { result } = runSupportedFixture(fixture);
+    const context = fixtureContext(fixture, result);
 
     if (fixture.expectedError !== undefined) {
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(errorMatches(result.error, fixture.expectedError)).toBe(true);
+      if (result.ok) {
+        expect(result, context).toMatchObject({ ok: false });
+        return;
       }
+      expect(result.error, context).toMatchObject(fixture.expectedError);
       return;
     }
 
-    expect(result.ok).toBe(true);
-    expect(result.stack).toEqual(fixture.expectedStack);
+    if (!result.ok) {
+      expect(result, context).toMatchObject({ ok: true });
+      return;
+    }
+    expect(result.stack, context).toEqual(fixture.expectedStack);
     if (fixture.expectedVariables !== undefined) {
-      expect(result.variables).toEqual(fixture.expectedVariables);
+      expect(result.variables, context).toEqual(fixture.expectedVariables);
     }
   });
 });
