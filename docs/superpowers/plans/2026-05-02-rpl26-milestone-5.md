@@ -158,7 +158,7 @@ Expected: commit succeeds.
 - Create: `tests/conformance/runner.ts`
 - Create: `tests/conformance/manual-derived.test.ts`
 
-- [ ] **Step 1: Write failing fixture validation tests**
+- [x] **Step 1: Write failing fixture validation tests**
 
 Create `tests/conformance/manual-derived.test.ts`:
 
@@ -211,7 +211,7 @@ describe("manual-derived conformance fixture metadata", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run:
 
@@ -221,7 +221,7 @@ npm test -- tests/conformance/manual-derived.test.ts
 
 Expected: FAIL because `fixtures.ts` and `runner.ts` do not exist.
 
-- [ ] **Step 3: Add fixture types and an empty corpus**
+- [x] **Step 3: Add fixture types and an empty corpus**
 
 Create `tests/conformance/fixtures.ts`:
 
@@ -250,7 +250,7 @@ export type ConformanceFixture = {
 export const CONFORMANCE_FIXTURES: ConformanceFixture[] = [];
 ```
 
-- [ ] **Step 4: Add validation helper**
+- [x] **Step 4: Add validation helper**
 
 Create `tests/conformance/runner.ts`:
 
@@ -304,7 +304,7 @@ export function errorMatches(actual: CalculatorError, expected: { code: string; 
 }
 ```
 
-- [ ] **Step 5: Run tests to verify validation passes**
+- [x] **Step 5: Run tests to verify validation passes**
 
 Run:
 
@@ -314,7 +314,7 @@ npm test -- tests/conformance/manual-derived.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit fixture validation scaffolding**
+- [x] **Step 6: Commit fixture validation scaffolding**
 
 Run:
 
