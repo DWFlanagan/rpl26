@@ -604,30 +604,25 @@ Expected: commit succeeds. If no runtime files changed, `git add` prints no erro
 **Files:**
 - Modify: `tests/cli.test.ts`
 
-- [x] **Step 1: Add failing CLI smoke test for a manual-derived example**
+- [x] **Step 1: Add CLI smoke test for a manual-derived example**
 
-Append to `tests/cli.test.ts`:
+Append to `tests/cli.test.ts` using the existing source-level `runCli` helper so `npm test` does not depend on ignored or stale `dist` output:
 
 ```ts
-import { spawnSync } from "node:child_process";
-
 describe("manual-derived CLI smoke examples", () => {
   it("prints string object examples in stack order", () => {
-    const result = spawnSync(process.execPath, ["dist/src/cli.js", "\"abc\" HEAD \"abc\" TRIL"], {
-      cwd: process.cwd(),
-      encoding: "utf8"
-    });
+    const result = runCli(["\"abc\" HEAD \"abc\" TRIL"]);
 
-    expect(result.status).toBe(0);
+    expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('2: "a"');
     expect(result.stdout).toContain('1: "bc"');
   });
 });
 ```
 
-If `tests/cli.test.ts` already imports `spawnSync`, merge the import instead of duplicating it.
+Follow the existing `runCli` style in `tests/cli.test.ts`.
 
-- [x] **Step 2: Run the CLI test before building to observe failure if `dist` is stale**
+- [x] **Step 2: Run the CLI test without requiring a build**
 
 Run:
 
@@ -635,7 +630,7 @@ Run:
 npm test -- tests/cli.test.ts
 ```
 
-Expected: PASS if `dist` is already current, or FAIL because `dist/src/cli.js` is missing or stale.
+Expected: PASS without relying on `dist/`.
 
 - [x] **Step 3: Build and rerun the CLI test**
 
