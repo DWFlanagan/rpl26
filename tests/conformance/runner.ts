@@ -1,6 +1,6 @@
 import { CalculatorSession } from "../../src/session.js";
 import type { CalculatorError, ExecuteResult } from "../../src/types.js";
-import type { ConformanceFixture } from "./fixtures.js";
+import type { ConformanceFixture, ExpectedError } from "./fixtures.js";
 
 const STATUSES = new Set(["supported", "deferred", "intentional-divergence", "needs-fix"]);
 
@@ -27,8 +27,11 @@ export function validateFixtures(fixtures: ConformanceFixture[]): string[] {
       errors.push(`${fixture.id}: non-supported fixtures require a reason`);
     }
 
-    if (fixture.status === "supported" && fixture.expectedStack === undefined && fixture.expectedError === undefined) {
-      errors.push(`${fixture.id}: supported fixtures require expectedStack or expectedError`);
+    if (fixture.status === "supported") {
+      const expectationCount = Number(fixture.expectedStack !== undefined) + Number(fixture.expectedError !== undefined);
+      if (expectationCount !== 1) {
+        errors.push(`${fixture.id}: supported fixtures require exactly one of expectedStack or expectedError`);
+      }
     }
   }
 
@@ -40,7 +43,7 @@ export function runSupportedFixture(fixture: ConformanceFixture): SupportedFixtu
   return { fixture, result: session.execute(fixture.input) };
 }
 
-export function errorMatches(actual: CalculatorError, expected: { code: string; message?: string }): boolean {
+export function errorMatches(actual: CalculatorError, expected: ExpectedError): boolean {
   if (actual.code !== expected.code) return false;
   if (expected.message === undefined) return true;
   return actual.message === expected.message;
