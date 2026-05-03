@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { completeReplInput, formatStack, runCli, runReplLines } from "../src/cli.js";
 
@@ -69,5 +70,18 @@ describe("CLI", () => {
     expect(completeReplInput("IN", session)).toEqual([["INC", "INV"], "IN"]);
     expect(completeReplInput("ST", session)).toEqual([["START", "STEP", "STO"], "ST"]);
     expect(completeReplInput("WH", session)).toEqual([["WHILE"], "WH"]);
+  });
+});
+
+describe("manual-derived CLI smoke examples", () => {
+  it("prints string object examples in stack order", () => {
+    const result = spawnSync(process.execPath, ["dist/src/cli.js", "\"abc\" HEAD \"abc\" TRIL"], {
+      cwd: process.cwd(),
+      encoding: "utf8"
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('2: "a"');
+    expect(result.stdout).toContain('1: "bc"');
   });
 });

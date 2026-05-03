@@ -604,7 +604,7 @@ Expected: commit succeeds. If no runtime files changed, `git add` prints no erro
 **Files:**
 - Modify: `tests/cli.test.ts`
 
-- [ ] **Step 1: Add failing CLI smoke test for a manual-derived example**
+- [x] **Step 1: Add failing CLI smoke test for a manual-derived example**
 
 Append to `tests/cli.test.ts`:
 
@@ -627,7 +627,7 @@ describe("manual-derived CLI smoke examples", () => {
 
 If `tests/cli.test.ts` already imports `spawnSync`, merge the import instead of duplicating it.
 
-- [ ] **Step 2: Run the CLI test before building to observe failure if `dist` is stale**
+- [x] **Step 2: Run the CLI test before building to observe failure if `dist` is stale**
 
 Run:
 
@@ -637,7 +637,7 @@ npm test -- tests/cli.test.ts
 
 Expected: PASS if `dist` is already current, or FAIL because `dist/src/cli.js` is missing or stale.
 
-- [ ] **Step 3: Build and rerun the CLI test**
+- [x] **Step 3: Build and rerun the CLI test**
 
 Run:
 
@@ -648,7 +648,7 @@ npm test -- tests/cli.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 4: Commit CLI smoke coverage**
+- [x] **Step 4: Commit CLI smoke coverage**
 
 Run:
 
