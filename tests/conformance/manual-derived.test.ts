@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CONFORMANCE_FIXTURES } from "./fixtures.js";
-import { validateFixtures } from "./runner.js";
+import { errorMatches, runSupportedFixture, validateFixtures } from "./runner.js";
 
 describe("manual-derived conformance fixture metadata", () => {
   it("accepts the checked-in fixture corpus", () => {
@@ -60,5 +60,25 @@ describe("manual-derived conformance fixture metadata", () => {
     expect(validateFixtures(fixtures)).toContain(
       "ambiguous-supported: supported fixtures require exactly one of expectedStack or expectedError"
     );
+  });
+});
+
+describe("manual-derived supported conformance fixtures", () => {
+  it.each(CONFORMANCE_FIXTURES.filter((fixture) => fixture.status === "supported"))("$id: $title", (fixture) => {
+    const { result } = runSupportedFixture(fixture);
+
+    if (fixture.expectedError !== undefined) {
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(errorMatches(result.error, fixture.expectedError)).toBe(true);
+      }
+      return;
+    }
+
+    expect(result.ok).toBe(true);
+    expect(result.stack).toEqual(fixture.expectedStack);
+    if (fixture.expectedVariables !== undefined) {
+      expect(result.variables).toEqual(fixture.expectedVariables);
+    }
   });
 });

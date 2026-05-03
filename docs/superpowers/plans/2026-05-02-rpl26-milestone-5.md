@@ -333,7 +333,7 @@ Expected: commit succeeds.
 - Modify: `tests/conformance/fixtures.ts`
 - Modify: `tests/conformance/manual-derived.test.ts`
 
-- [ ] **Step 1: Add failing supported execution test**
+- [x] **Step 1: Add failing supported execution test**
 
 Append to `tests/conformance/manual-derived.test.ts`:
 
@@ -363,7 +363,7 @@ describe("manual-derived supported conformance fixtures", () => {
 
 Keep the existing imports by merging this import with the imports already at the top of the file.
 
-- [ ] **Step 2: Populate representative supported fixtures**
+- [x] **Step 2: Populate representative supported fixtures**
 
 Replace the empty `CONFORMANCE_FIXTURES` array in `tests/conformance/fixtures.ts` with:
 
@@ -479,7 +479,7 @@ export const CONFORMANCE_FIXTURES: ConformanceFixture[] = [
 ];
 ```
 
-- [ ] **Step 3: Run conformance tests**
+- [x] **Step 3: Run conformance tests**
 
 Run:
 
@@ -489,7 +489,7 @@ npm test -- tests/conformance/manual-derived.test.ts
 
 Expected: PASS. If an expected source object contains parser `source` metadata not shown here, update the fixture expectation rather than changing runtime behavior.
 
-- [ ] **Step 4: Commit supported fixture execution**
+- [x] **Step 4: Commit supported fixture execution**
 
 Run:
 
