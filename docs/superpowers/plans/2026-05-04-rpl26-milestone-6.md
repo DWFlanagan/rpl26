@@ -370,7 +370,7 @@ Expected: commit succeeds.
 - Create: `src/word-search.ts`
 - Modify: `tests/word-help.test.ts`
 
-- [ ] **Step 1: Write failing word search tests**
+- [x] **Step 1: Write failing word search tests**
 
 Add to `tests/word-help.test.ts`:
 
@@ -397,7 +397,7 @@ Add tests:
   });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -407,7 +407,7 @@ npm test -- tests/word-help.test.ts
 
 Expected: FAIL because `src/word-search.ts` does not exist and metadata lacks examples/keywords.
 
-- [ ] **Step 3: Extend word metadata type**
+- [x] **Step 3: Extend word metadata type**
 
 Modify `src/words.ts`:
 
@@ -424,7 +424,7 @@ export type WordMetadata = {
 };
 ```
 
-- [ ] **Step 4: Add focused metadata**
+- [x] **Step 4: Add focused metadata**
 
 Update representative entries in `src/words.ts`:
 
@@ -467,7 +467,7 @@ Update representative entries in `src/words.ts`:
 
 Add examples/keywords for at least `+`, `DROP`, `SWAP`, `OVER`, `SIZE`, `GET`, `IF`, `HEAD`, `SUB`, `->STR`, and `->TAG` using short original examples from existing README/test behavior.
 
-- [ ] **Step 5: Implement search helpers**
+- [x] **Step 5: Implement search helpers**
 
 Create `src/word-search.ts`:
 
@@ -512,7 +512,7 @@ export function describeWordDetail(name: string): string | undefined {
 }
 ```
 
-- [ ] **Step 6: Delegate existing help to rich details**
+- [x] **Step 6: Delegate existing help to rich details**
 
 Modify `src/words.ts`:
 
@@ -525,7 +525,7 @@ export function describeWord(name: string): string | undefined {
 }
 ```
 
-- [ ] **Step 7: Run word tests**
+- [x] **Step 7: Run word tests**
 
 Run:
 
@@ -535,7 +535,7 @@ npm test -- tests/word-help.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 8: Commit word search**
+- [x] **Step 8: Commit word search**
 
 Run:
 
