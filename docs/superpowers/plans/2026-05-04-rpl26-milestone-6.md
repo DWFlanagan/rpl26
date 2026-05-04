@@ -1030,7 +1030,7 @@ npm test -- tests/style.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit styling layer**
+- [x] **Step 5: Commit styling layer**
 
 Run:
 
