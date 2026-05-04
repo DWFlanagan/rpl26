@@ -31,6 +31,20 @@ export type CalculatorState = {
   variables: Record<string, RplObject>;
 };
 
+export type SessionSnapshot = {
+  format: "rpl26-session";
+  version: 1;
+  stack: RplObject[];
+  variables: Record<string, RplObject>;
+};
+
+export type SnapshotValidationError = {
+  path: string;
+  message: string;
+};
+
+export type SnapshotLoadResult = { ok: true } | { ok: false; error: SnapshotValidationError };
+
 export type LocalBindings = Record<string, RplObject>;
 
 export type EvaluateResult =

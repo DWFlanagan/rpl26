@@ -1,6 +1,7 @@
 import { cloneObject, cloneState, evaluateObject } from "./core.js";
 import { parseInput } from "./parser.js";
-import type { CalculatorState, ExecuteResult, RplObject, StackEntry, TraceEntry } from "./types.js";
+import { loadSessionSnapshot } from "./snapshot.js";
+import type { CalculatorState, ExecuteResult, RplObject, SessionSnapshot, SnapshotLoadResult, StackEntry, TraceEntry } from "./types.js";
 
 const sourceOf = (object: RplObject): string => object.source ?? object.kind;
 
@@ -52,6 +53,28 @@ export class CalculatorSession {
       before: entry.before.map(cloneObject),
       after: entry.after.map(cloneObject)
     }));
+  }
+
+  toSnapshot(): SessionSnapshot {
+    const state = cloneState(this.state);
+    return {
+      format: "rpl26-session",
+      version: 1,
+      stack: state.stack,
+      variables: state.variables
+    };
+  }
+
+  loadSnapshot(snapshot: unknown): SnapshotLoadResult {
+    const result = loadSessionSnapshot(snapshot);
+    if (!result.ok) return result;
+
+    this.state = {
+      stack: result.snapshot.stack.map(cloneObject),
+      variables: Object.fromEntries(Object.entries(result.snapshot.variables).map(([name, value]) => [name, cloneObject(value)]))
+    };
+    this.trace = [];
+    return { ok: true };
   }
 
   clear(): void {

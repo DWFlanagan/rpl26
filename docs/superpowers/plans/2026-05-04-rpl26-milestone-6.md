@@ -118,7 +118,7 @@ Expected: commit succeeds.
 - Modify: `src/session.ts`
 - Create: `tests/session-snapshot.test.ts`
 
-- [ ] **Step 1: Write failing snapshot tests**
+- [x] **Step 1: Write failing snapshot tests**
 
 Create `tests/session-snapshot.test.ts`:
 
@@ -182,7 +182,7 @@ describe("session snapshots", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -192,7 +192,7 @@ npm test -- tests/session-snapshot.test.ts
 
 Expected: FAIL because `src/snapshot.ts`, `toSnapshot()`, and `loadSnapshot()` do not exist.
 
-- [ ] **Step 3: Add snapshot types**
+- [x] **Step 3: Add snapshot types**
 
 Modify `src/types.ts` by adding these exports after `CalculatorState`:
 
@@ -212,7 +212,7 @@ export type SnapshotValidationError = {
 export type SnapshotLoadResult = { ok: true } | { ok: false; error: SnapshotValidationError };
 ```
 
-- [ ] **Step 4: Implement snapshot validation**
+- [x] **Step 4: Implement snapshot validation**
 
 Create `src/snapshot.ts`:
 
@@ -305,7 +305,7 @@ export async function writeSnapshotFile(path: string, snapshot: SessionSnapshot)
 }
 ```
 
-- [ ] **Step 5: Add session APIs**
+- [x] **Step 5: Add session APIs**
 
 Modify `src/session.ts`:
 
@@ -339,7 +339,7 @@ Add methods before `clear()`:
   }
 ```
 
-- [ ] **Step 6: Run snapshot tests**
+- [x] **Step 6: Run snapshot tests**
 
 Run:
 
@@ -349,7 +349,7 @@ npm test -- tests/session-snapshot.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit snapshot API**
+- [x] **Step 7: Commit snapshot API**
 
 Run:
 
