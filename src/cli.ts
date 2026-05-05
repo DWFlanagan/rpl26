@@ -1,12 +1,12 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { BUILTIN_NAMES } from "./core.js";
-import { formatObject } from "./format.js";
+import { createReplCommandState, DOT_COMMANDS, formatStack, runDotCommand } from "./repl-commands.js";
 import { CalculatorSession } from "./session.js";
-import { describeWord, listWords } from "./words.js";
-import type { ExecuteResult, RplObject, StackEntry } from "./types.js";
+import type { ReplCommandState } from "./repl-commands.js";
 
 export { formatObject } from "./format.js";
+export { formatStack } from "./repl-commands.js";
 
 export type CliResult = {
   exitCode: number;
@@ -19,23 +19,6 @@ type CliMode = "calc" | "repl";
 type CompletionResult = [string[], string];
 
 const usage = 'Usage: rpl26 "2 3 +"';
-const DOT_COMMANDS = [".stack", ".vars", ".trace", ".words", ".help", ".clear", ".exit", ".quit"];
-
-export function formatStack(stack: StackEntry[]): string {
-  if (stack.length === 0) return "Stack: <empty>";
-  return stack.map((entry) => `${entry.level}: ${formatObject(entry.value)}`).join("\n");
-}
-
-function formatVariables(variables: Record<string, RplObject>): string {
-  const entries = Object.entries(variables);
-  if (entries.length === 0) return "Variables: <empty>";
-  return entries.map(([name, value]) => `${name}: ${formatObject(value)}`).join("\n");
-}
-
-function formatTrace(result: ExecuteResult): string {
-  if (result.trace.length === 0) return "Trace: <empty>";
-  return result.trace.map((entry) => `${entry.ok ? "ok" : "error"} ${entry.source}`).join("\n");
-}
 
 function currentWord(line: string): string {
   return line.match(/\S+$/)?.[0] ?? "";
@@ -72,21 +55,24 @@ export function runCli(args: string[]): CliResult {
   };
 }
 
-export function runReplLines(lines: string[]): CliResult {
+export async function runReplLines(lines: string[]): Promise<CliResult> {
   const session = new CalculatorSession();
+  const state = createReplCommandState();
   const outputLines: string[] = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.length === 0) continue;
-    const dotResult = runDotCommand(session, trimmed);
-    if (dotResult === "exit") break;
-    if (dotResult !== undefined) {
-      outputLines.push(dotResult);
+    const dotResult = await runDotCommand(session, state, trimmed);
+    if (dotResult.kind === "exit") break;
+    if (dotResult.kind === "output") {
+      outputLines.push(dotResult.output);
       continue;
     }
 
     const result = session.execute(trimmed);
+    state.lastResult = result;
+    state.dirty = true;
     if (!result.ok) {
       return {
         exitCode: 1,
@@ -107,6 +93,7 @@ export function runReplLines(lines: string[]): CliResult {
 
 export async function runInteractiveRepl(): Promise<void> {
   const session = new CalculatorSession();
+  const state = createReplCommandState();
   const repl = createInterface({
     input,
     output,
@@ -114,11 +101,11 @@ export async function runInteractiveRepl(): Promise<void> {
     completer: (line) => completeReplInput(line, session)
   });
 
-  console.log("rpl26 REPL. Commands: .stack .vars .trace .words .help .clear .exit");
+  console.log("rpl26 REPL. Commands: .stack .vars .trace .words .find .help .status .clear .save .load .exit");
   repl.prompt();
 
   for await (const line of repl) {
-    const result = runReplLine(session, line);
+    const result = await runReplLine(session, state, line);
     if (result === "exit") break;
     if (result.length > 0) console.log(result);
     repl.prompt();
@@ -127,33 +114,18 @@ export async function runInteractiveRepl(): Promise<void> {
   repl.close();
 }
 
-function runReplLine(session: CalculatorSession, line: string): string | "exit" {
+async function runReplLine(session: CalculatorSession, state: ReplCommandState, line: string): Promise<string | "exit"> {
   const trimmed = line.trim();
   if (trimmed.length === 0) return "";
-  const dotResult = runDotCommand(session, trimmed);
-  if (dotResult !== undefined) return dotResult;
+  const dotResult = await runDotCommand(session, state, trimmed);
+  if (dotResult.kind === "exit") return "exit";
+  if (dotResult.kind === "output") return dotResult.output;
 
   const result = session.execute(trimmed);
+  state.lastResult = result;
+  state.dirty = true;
   if (!result.ok) return `${result.error.code}: ${result.error.message}`;
   return formatStack(result.stack);
-}
-
-function runDotCommand(session: CalculatorSession, trimmed: string): string | "exit" | undefined {
-  if (trimmed === ".exit" || trimmed === ".quit") return "exit";
-  if (trimmed === ".stack") return formatStack(session.getStack());
-  if (trimmed === ".vars") return formatVariables(session.getVariables());
-  if (trimmed === ".trace") return formatTrace({ ok: true, stack: session.getStack(), variables: session.getVariables(), trace: session.getTrace() });
-  if (trimmed === ".words") return listWords().join(" ");
-  if (trimmed === ".help") return "Use .help WORD for stack effect, description, and source note.";
-  if (trimmed.startsWith(".help ")) {
-    const word = trimmed.slice(".help ".length).trim();
-    return describeWord(word) ?? `No help for ${word}`;
-  }
-  if (trimmed === ".clear") {
-    session.clear();
-    return "Cleared.";
-  }
-  return undefined;
 }
 
 export function main(args = process.argv.slice(2), mode: CliMode = "calc"): void {

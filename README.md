@@ -12,9 +12,10 @@ It is not an HP ROM emulator and does not execute HP firmware. The goal is to bu
 - `npm run calc -- "2 3 +"`: execute one command line and print the stack.
 - `npm run calc -- --json "2 3 +"`: execute one command line and print the full JSON result.
 - `npm run repl`: start a persistent interactive session.
+- `npm run tui`: start the keyboard-first terminal UI after building.
 - `npm run mcp`: run the MCP stdio server after building.
 
-The REPL supports `.stack`, `.vars`, `.trace`, `.words`, `.help`, `.clear`, and `.exit`.
+The REPL supports `.stack`, `.stack --verbose`, `.vars`, `.vars --verbose`, `.trace`, `.trace --verbose`, `.words`, `.find QUERY`, `.help WORD`, `.status`, `.save PATH`, `.load PATH`, `.clear`, and `.exit`.
 
 ## Milestone 1 Scope
 
@@ -55,8 +56,30 @@ In the REPL:
 
 ```rpl
 .words
+.find list
 .help HEAD
 ```
+
+Session snapshots:
+
+```rpl
+42 'A' STO
+.save examples/session.json
+.clear
+.load examples/session.json
+.status
+```
+
+## Terminal UI
+
+Build first, then launch the TUI:
+
+```bash
+npm run build
+npm run tui
+```
+
+The TUI is separate from `npm run repl`. It keeps stack and variable inspection visible, lets you switch panes with the keyboard, searches words, shows help and trace details, and uses the same snapshot commands as the plain REPL.
 
 ## Clean-Room Rule
 

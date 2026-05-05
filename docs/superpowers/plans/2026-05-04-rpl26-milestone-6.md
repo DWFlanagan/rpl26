@@ -555,7 +555,7 @@ Expected: commit succeeds.
 - Modify: `src/cli.ts`
 - Modify: `tests/cli.test.ts`
 
-- [ ] **Step 1: Write failing REPL command tests**
+- [x] **Step 1: Write failing REPL command tests**
 
 Add tests to `tests/cli.test.ts`:
 
@@ -596,7 +596,7 @@ Add tests to `tests/cli.test.ts`:
   });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -606,7 +606,7 @@ npm test -- tests/cli.test.ts
 
 Expected: FAIL because the new dot commands and verbose flags do not exist.
 
-- [ ] **Step 3: Implement shared command helpers**
+- [x] **Step 3: Implement shared command helpers**
 
 Create `src/repl-commands.ts`:
 
@@ -704,7 +704,7 @@ export async function runDotCommand(session: CalculatorSession, state: ReplComma
 }
 ```
 
-- [ ] **Step 4: Update CLI to use shared commands**
+- [x] **Step 4: Update CLI to use shared commands**
 
 Modify `src/cli.ts` imports:
 
@@ -783,7 +783,7 @@ Update `runInteractiveRepl()` to create command state and await line execution:
 
 Update all `tests/cli.test.ts` calls from `const result = runReplLines([...])` to `const result = await runReplLines([...])`, and mark those tests `async`.
 
-- [ ] **Step 5: Run focused CLI tests**
+- [x] **Step 5: Run focused CLI tests**
 
 Run:
 
@@ -813,7 +813,7 @@ Expected: commit succeeds.
 - Modify: `src/repl-commands.ts`
 - Modify: `src/cli.ts`
 
-- [ ] **Step 1: Write failing save/load tests**
+- [x] **Step 1: Write failing save/load tests**
 
 Add to `tests/cli.test.ts`:
 
@@ -861,7 +861,7 @@ Add tests:
   });
 ```
 
-- [ ] **Step 2: Run tests to verify failure or incomplete behavior**
+- [x] **Step 2: Run tests to verify failure or incomplete behavior**
 
 Run:
 
@@ -871,7 +871,7 @@ npm test -- tests/cli.test.ts tests/session-snapshot.test.ts
 
 Expected: FAIL if Task 4 did not fully wire async save/load; otherwise PASS and continue to Step 4.
 
-- [ ] **Step 3: Verify interactive REPL awaits file I/O**
+- [x] **Step 3: Verify interactive REPL awaits file I/O**
 
 Confirm `src/cli.ts` has this async line helper:
 
@@ -903,7 +903,7 @@ Update the interactive loop:
   }
 ```
 
-- [ ] **Step 4: Run save/load tests**
+- [x] **Step 4: Run save/load tests**
 
 Run:
 
@@ -1049,7 +1049,7 @@ Expected: commit succeeds.
 - Create: `src/tui/state.ts`
 - Create: `tests/tui-state.test.ts`
 
-- [ ] **Step 1: Write failing reducer tests**
+- [x] **Step 1: Write failing reducer tests**
 
 Create `tests/tui-state.test.ts`:
 
@@ -1094,7 +1094,7 @@ describe("TUI state", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -1104,7 +1104,7 @@ npm test -- tests/tui-state.test.ts
 
 Expected: FAIL because `src/tui/state.ts` does not exist.
 
-- [ ] **Step 3: Implement TUI state reducer**
+- [x] **Step 3: Implement TUI state reducer**
 
 Create `src/tui/state.ts`:
 
@@ -1202,7 +1202,7 @@ export function reduceTuiState(state: TuiState, action: TuiAction): TuiState {
 }
 ```
 
-- [ ] **Step 4: Run reducer tests**
+- [x] **Step 4: Run reducer tests**
 
 Run:
 
@@ -1231,7 +1231,7 @@ Expected: commit succeeds.
 - Create: `src/tui/render.ts`
 - Create: `tests/tui-render.test.ts`
 
-- [ ] **Step 1: Write failing renderer tests**
+- [x] **Step 1: Write failing renderer tests**
 
 Create `tests/tui-render.test.ts`:
 
@@ -1266,7 +1266,7 @@ describe("TUI renderer", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -1276,7 +1276,7 @@ npm test -- tests/tui-render.test.ts
 
 Expected: FAIL because `src/tui/render.ts` does not exist.
 
-- [ ] **Step 3: Implement pure renderer**
+- [x] **Step 3: Implement pure renderer**
 
 Create `src/tui/render.ts` with helpers that clamp line width rather than relying on terminal wrapping:
 
@@ -1342,7 +1342,7 @@ export function renderTui(state: TuiState, session: CalculatorSession, options: 
 }
 ```
 
-- [ ] **Step 4: Run renderer tests**
+- [x] **Step 4: Run renderer tests**
 
 Run:
 
@@ -1373,7 +1373,7 @@ Expected: commit succeeds.
 - Modify: `package.json`
 - Create: `tests/tui-entry.test.ts`
 
-- [ ] **Step 1: Write failing TUI entry tests**
+- [x] **Step 1: Write failing TUI entry tests**
 
 Create `tests/tui-entry.test.ts`:
 
@@ -1402,7 +1402,7 @@ describe("TUI entry support", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -1412,7 +1412,7 @@ npm test -- tests/tui-entry.test.ts
 
 Expected: FAIL because `src/tui/app.ts` does not exist.
 
-- [ ] **Step 3: Implement TUI controller**
+- [x] **Step 3: Implement TUI controller**
 
 Create `src/tui/app.ts`:
 
@@ -1497,7 +1497,7 @@ export async function runTui(): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: Add executable entry point**
+- [x] **Step 4: Add executable entry point**
 
 Create `src/tui.ts`:
 
@@ -1513,7 +1513,7 @@ Modify `package.json` scripts:
 "tui": "node dist/src/tui.js"
 ```
 
-- [ ] **Step 5: Run entry tests**
+- [x] **Step 5: Run entry tests**
 
 Run:
 
@@ -1523,7 +1523,7 @@ npm test -- tests/tui-entry.test.ts tests/tui-state.test.ts tests/tui-render.tes
 
 Expected: PASS.
 
-- [ ] **Step 6: Build and smoke the TUI entry module**
+- [x] **Step 6: Build and smoke the TUI entry module**
 
 Run:
 
@@ -1559,7 +1559,7 @@ Expected: commit succeeds.
 **Files:**
 - Modify: `README.md`
 
-- [ ] **Step 1: Update README commands**
+- [x] **Step 1: Update README commands**
 
 Modify the command list in `README.md` to include:
 
@@ -1573,7 +1573,7 @@ Update the REPL sentence:
 The REPL supports `.stack`, `.stack --verbose`, `.vars`, `.vars --verbose`, `.trace`, `.trace --verbose`, `.words`, `.find QUERY`, `.help WORD`, `.status`, `.save PATH`, `.load PATH`, `.clear`, and `.exit`.
 ```
 
-- [ ] **Step 2: Add session snapshot example**
+- [x] **Step 2: Add session snapshot example**
 
 Add to the examples section:
 
@@ -1589,7 +1589,7 @@ Session snapshots:
 ```
 ```
 
-- [ ] **Step 3: Add TUI note**
+- [x] **Step 3: Add TUI note**
 
 Add:
 
@@ -1606,7 +1606,7 @@ npm run tui
 The TUI is separate from `npm run repl`. It keeps stack and variable inspection visible, lets you switch panes with the keyboard, searches words, shows help and trace details, and uses the same snapshot commands as the plain REPL.
 ```
 
-- [ ] **Step 4: Run README checks**
+- [x] **Step 4: Run README checks**
 
 Run:
 
@@ -1637,7 +1637,7 @@ Expected: commit succeeds.
   - `tests/**/*.ts`
   - `README.md`
 
-- [ ] **Step 1: Run full tests**
+- [x] **Step 1: Run full tests**
 
 Run:
 
@@ -1647,7 +1647,7 @@ npm test
 
 Expected: PASS.
 
-- [ ] **Step 2: Run typecheck**
+- [x] **Step 2: Run typecheck**
 
 Run:
 
@@ -1657,7 +1657,7 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 3: Run build**
+- [x] **Step 3: Run build**
 
 Run:
 
@@ -1667,7 +1667,7 @@ npm run build
 
 Expected: PASS.
 
-- [ ] **Step 4: Run plain CLI smoke**
+- [x] **Step 4: Run plain CLI smoke**
 
 Run:
 
@@ -1681,7 +1681,7 @@ Expected stdout:
 1: 42
 ```
 
-- [ ] **Step 5: Run REPL helper smoke**
+- [x] **Step 5: Run REPL helper smoke**
 
 Run:
 
@@ -1691,7 +1691,7 @@ node -e "import('./dist/src/cli.js').then(async ({ runReplLines }) => { const re
 
 Expected: prints `repl smoke ok`.
 
-- [ ] **Step 6: Run TUI controller smoke**
+- [x] **Step 6: Run TUI controller smoke**
 
 Run:
 
@@ -1701,7 +1701,7 @@ node -e "import('./dist/src/tui/app.js').then(async ({ createTuiController }) =>
 
 Expected: prints `tui smoke ok`.
 
-- [ ] **Step 7: Review changed files**
+- [x] **Step 7: Review changed files**
 
 Run:
 
@@ -1725,19 +1725,19 @@ Expected: commit succeeds if there were fixes; skip this step if no files change
 
 ## Success Criteria
 
-- [ ] `npm run repl` still works as a plain line-oriented REPL.
-- [ ] `npm run tui` launches a separate TUI after `npm run build`.
-- [ ] TUI renders Stack, Vars, Words, Help, Trace, and Session panes.
-- [ ] Wide layout keeps stack/vars visible on the right.
-- [ ] Narrow layout remains readable without relying on terminal wrapping.
-- [ ] Keyboard navigation changes tabs without changing calculator state.
-- [ ] `.find QUERY` searches name, category, stack effect, description, keyword, and alias metadata.
-- [ ] `.status` reports stack depth, variable count, last result/error, and snapshot path.
-- [ ] `.trace` remains compact and `.trace --verbose` includes before/after stack summaries and errors.
-- [ ] `.stack --verbose` and `.vars --verbose` include object kinds.
-- [ ] `.save PATH` writes versioned snapshot JSON.
-- [ ] `.load PATH` validates before replacing state.
-- [ ] Failed snapshot loads leave the current session unchanged.
-- [ ] Semantic styling supports ANSI and no-color output.
-- [ ] README documents TUI and improved REPL commands.
-- [ ] `npm test`, `npm run typecheck`, `npm run build`, CLI smoke, REPL smoke, and TUI smoke all pass.
+- [x] `npm run repl` still works as a plain line-oriented REPL.
+- [x] `npm run tui` launches a separate TUI after `npm run build`.
+- [x] TUI renders Stack, Vars, Words, Help, Trace, and Session panes.
+- [x] Wide layout keeps stack/vars visible on the right.
+- [x] Narrow layout remains readable without relying on terminal wrapping.
+- [x] Keyboard navigation changes tabs without changing calculator state.
+- [x] `.find QUERY` searches name, category, stack effect, description, keyword, and alias metadata.
+- [x] `.status` reports stack depth, variable count, last result/error, and snapshot path.
+- [x] `.trace` remains compact and `.trace --verbose` includes before/after stack summaries and errors.
+- [x] `.stack --verbose` and `.vars --verbose` include object kinds.
+- [x] `.save PATH` writes versioned snapshot JSON.
+- [x] `.load PATH` validates before replacing state.
+- [x] Failed snapshot loads leave the current session unchanged.
+- [x] Semantic styling supports ANSI and no-color output.
+- [x] README documents TUI and improved REPL commands.
+- [x] `npm test`, `npm run typecheck`, `npm run build`, CLI smoke, REPL smoke, and TUI smoke all pass.

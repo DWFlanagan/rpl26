@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "calc": "node dist/src/cli.js",
     "repl": "node dist/src/repl.js",
+    "tui": "node dist/src/tui.js",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "mcp": "node dist/src/mcp/server.js"

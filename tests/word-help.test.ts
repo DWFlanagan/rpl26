@@ -46,8 +46,8 @@ describe("word metadata", () => {
 });
 
 describe("REPL help", () => {
-  it("prints word list and single-word help", () => {
-    const result = runReplLines([".words", ".help HEAD"]);
+  it("prints word list and single-word help", async () => {
+    const result = await runReplLines([".words", ".help HEAD"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("HEAD");
@@ -55,8 +55,8 @@ describe("REPL help", () => {
     expect(result.stdout).toContain("Stack:");
   });
 
-  it("reports missing help without failing the session", () => {
-    const result = runReplLines([".help NOPE"]);
+  it("reports missing help without failing the session", async () => {
+    const result = await runReplLines([".help NOPE"]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("No help for NOPE");
