@@ -25,3 +25,4 @@ HP 48G Series User's Guide role: the manual remains the behavior baseline for HP
 - TUI keyboard shortcuts are local `rpl26` UI choices.
 - Snapshot JSON is a local persistence format and is not related to HP binary object formats.
 - Word help examples are documentation examples written in our own words or based on existing clean-room notes.
+- Deferred TUI help behavior: the Help pane should eventually be driven by a selected word from the Words pane, with keyboard filtering/navigation still to be designed.

@@ -16,7 +16,7 @@ describe("TUI state", () => {
     const state = reduceTuiState(createTuiState(), { type: "insertText", text: "2 3 +" });
 
     expect(state.input).toBe("2 3 +");
-    expect(state.activeTab).toBe("stack");
+    expect(state.activeTab).toBe("history");
     expect(reduceTuiState(state, { type: "backspace" }).input).toBe("2 3 ");
   });
 

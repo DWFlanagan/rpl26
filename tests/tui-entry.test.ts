@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CalculatorSession } from "../src/session.js";
-import { createTuiController } from "../src/tui/app.js";
+import { createTuiController, handleTuiKeypress } from "../src/tui/app.js";
 
 describe("TUI entry support", () => {
   it("handles a command submission through the controller", async () => {
@@ -18,5 +18,14 @@ describe("TUI entry support", () => {
     const output = await controller.submit(".find stack");
 
     expect(output).toContain("DUP");
+  });
+
+  it("reports exit from the interactive return key path", async () => {
+    const controller = createTuiController({ session: new CalculatorSession(), width: 80, height: 20, color: false });
+    controller.dispatch({ type: "insertText", text: ".exit" });
+
+    const result = await handleTuiKeypress(controller, undefined, { name: "return" });
+
+    expect(result).toBe("exit");
   });
 });

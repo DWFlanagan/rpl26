@@ -1,7 +1,7 @@
 import { searchWords } from "../word-search.js";
 import type { WordMetadata } from "../words.js";
 
-export type TuiTab = "stack" | "vars" | "words" | "help" | "trace" | "session";
+export type TuiTab = "history" | "vars" | "words" | "help" | "trace" | "session";
 
 export type TuiHistoryEntry = {
   input: string;
@@ -32,12 +32,12 @@ export type TuiAction =
   | { type: "recordOutput"; input: string; output: string; ok: boolean }
   | { type: "setSnapshotPath"; path?: string; dirty: boolean };
 
-const TABS: TuiTab[] = ["stack", "vars", "words", "help", "trace", "session"];
+const TABS: TuiTab[] = ["history", "vars", "words", "help", "trace", "session"];
 
 export function createTuiState(): TuiState {
   const visibleWords = searchWords("");
   return {
-    activeTab: "stack",
+    activeTab: "history",
     input: "",
     history: [],
     status: "ready",

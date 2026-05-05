@@ -12,6 +12,14 @@ export type TuiControllerOptions = {
   color: boolean;
 };
 
+export type TuiKey = {
+  name?: string;
+  ctrl?: boolean;
+  shift?: boolean;
+};
+
+export type TuiKeypressResult = "continue" | "exit";
+
 export function createTuiController(options: TuiControllerOptions) {
   const session = options.session ?? new CalculatorSession();
   const commandState = createReplCommandState();
@@ -48,6 +56,20 @@ export function createTuiController(options: TuiControllerOptions) {
   };
 }
 
+export async function handleTuiKeypress(
+  controller: ReturnType<typeof createTuiController>,
+  text: string | undefined,
+  key: TuiKey
+): Promise<TuiKeypressResult> {
+  if (key.name === "tab") controller.dispatch(key.shift ? { type: "previousTab" } : { type: "nextTab" });
+  else if (key.name === "backspace") controller.dispatch({ type: "backspace" });
+  else if (key.name === "return") {
+    const result = await controller.submit(controller.state.input);
+    if (result === "exit") return "exit";
+  } else if (text !== undefined && text >= " ") controller.dispatch({ type: "insertText", text });
+  return "continue";
+}
+
 export async function runTui(): Promise<void> {
   const controller = createTuiController({
     width: stdout.columns ?? 100,
@@ -70,10 +92,12 @@ export async function runTui(): Promise<void> {
       stdout.write("\n");
       process.exit(0);
     }
-    if (key.name === "tab") controller.dispatch(key.shift ? { type: "previousTab" } : { type: "nextTab" });
-    else if (key.name === "backspace") controller.dispatch({ type: "backspace" });
-    else if (key.name === "return") await controller.submit(controller.state.input);
-    else if (text !== undefined && text >= " ") controller.dispatch({ type: "insertText", text });
+    const result = await handleTuiKeypress(controller, text, key);
+    if (result === "exit") {
+      if (stdin.isTTY) stdin.setRawMode(false);
+      stdout.write("\n");
+      process.exit(0);
+    }
     draw();
   });
 }
