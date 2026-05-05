@@ -17,20 +17,16 @@ It is not an HP ROM emulator and does not execute HP firmware. The goal is to bu
 
 The REPL supports `.stack`, `.stack --verbose`, `.vars`, `.vars --verbose`, `.trace`, `.trace --verbose`, `.words`, `.find QUERY`, `.help WORD`, `.status`, `.save PATH`, `.load PATH`, `.clear`, and `.exit`.
 
-## Milestone 1 Scope
+## Implemented Scope Through Milestone 6
 
-- RPL objects: real numbers, bare names, quoted names, programs, lists, and strings.
-- Stack commands: `DUP`, `DROP`, `SWAP`, `OVER`, `CLEAR`.
-- Arithmetic commands: `+`, `-`, `*`, `/`, `NEG`, `INV`, `SQ`, `SQRT`.
-- Program evaluation through `EVAL`.
-- Global variables through `STO`.
-- Local variables through `->`, such as `5 << -> x << x x * >> >> EVAL`.
-- Everyday stack programming words: `DUP2`, `DROP2`, `ROT`, `PICK`, `->LIST`, `LIST->`, `SIZE`, `GET`, and comparisons.
-- HP-style program control flow: `IF THEN ELSE END`, `START NEXT`, `START STEP`, `FOR NEXT`, `FOR STEP`, `WHILE REPEAT END`, and `DO UNTIL END`.
-- Practical object words: `HEAD`, `TRIL`, `SUB`, `POS`, `CHR`, `NUM`, `->STR`, and `->TAG`.
-- Word discovery through `.words` and `.help WORD` in the REPL.
-- Persistent calculator session.
-- MCP tools: `execute`, `get_stack`, `get_variables`, `clear`, `get_trace`.
+- Milestone 1, RPL identity: typed RPL objects, strict parsing, persistent stack evaluation, programs as objects, `EVAL`, globals through `STO`, locals through `->`, CLI, REPL, autocomplete, and MCP access.
+- Milestone 2, everyday stack programming: stack utilities such as `DUP2`, `DROP2`, `ROT`, and `PICK`; list construction and decomposition with `->LIST`, `LIST->`, `SIZE`, and `GET`; booleans, comparisons, and first conditional behavior.
+- Milestone 3, program control flow: `IF THEN ELSE END`, `START NEXT`, `START STEP`, `FOR NEXT`, `FOR STEP`, `WHILE REPEAT END`, and `DO UNTIL END`, with readable traces for multi-step evaluation.
+- Milestone 4, object library: practical non-CAS object words for strings, lists, and tagged values, including `HEAD`, `TRIL`, `SUB`, `POS`, `CHR`, `NUM`, `->STR`, and `->TAG`.
+- Milestone 5, conformance suite: source-labeled manual-derived examples, clean-room notes, and fixture validation for supported behavior, deferred behavior, and intentional divergences.
+- Milestone 6, usability surface: richer dot commands, `.find`, `.help WORD`, verbose stack/variable/trace views, saved session snapshots, searchable word metadata, terminal styling, and the keyboard-first TUI.
+
+Current object support includes real numbers, bare names, quoted names, programs, lists, strings, and tagged values. MCP currently exposes `execute`, `get_stack`, `get_variables`, `clear`, and `get_trace`.
 
 ## Examples
 
