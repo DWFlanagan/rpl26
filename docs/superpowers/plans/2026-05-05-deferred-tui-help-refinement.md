@@ -632,7 +632,7 @@ Update `wordLines` to accept the rendered body height, reserve one row for the f
 **Files:**
 - Modify: `docs/superpowers/plans/2026-05-05-deferred-tui-help-refinement.md`
 
-- [ ] **Step 1: Run full test suite**
+- [x] **Step 1: Run full test suite**
 
 Run:
 
@@ -642,7 +642,7 @@ npm test
 
 Expected: PASS.
 
-- [ ] **Step 2: Run typecheck**
+- [x] **Step 2: Run typecheck**
 
 Run:
 
@@ -652,7 +652,7 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 3: Run build**
+- [x] **Step 3: Run build**
 
 Run:
 
@@ -662,12 +662,12 @@ npm run build
 
 Expected: PASS.
 
-- [ ] **Step 4: Run controller smoke check**
+- [x] **Step 4: Run controller smoke check**
 
 Run:
 
 ```bash
-node --input-type=module -e "import { createTuiController, handleTuiKeypress } from './dist/tui/app.js'; import { CalculatorSession } from './dist/session.js'; const c = createTuiController({ session: new CalculatorSession(), width: 80, height: 20, color: false }); await handleTuiKeypress(c, undefined, { name: 'tab' }); await handleTuiKeypress(c, undefined, { name: 'tab' }); await handleTuiKeypress(c, 'd', { name: 'd' }); await handleTuiKeypress(c, 'u', { name: 'u' }); await handleTuiKeypress(c, undefined, { name: 'down' }); await handleTuiKeypress(c, undefined, { name: 'return' }); console.log(`${c.state.activeTab}:${c.state.wordFilter}:${c.state.selectedWord?.name}`);"
+node --input-type=module -e 'import { createTuiController, handleTuiKeypress } from "./dist/src/tui/app.js"; import { CalculatorSession } from "./dist/src/session.js"; const c = createTuiController({ session: new CalculatorSession(), width: 80, height: 20, color: false }); await handleTuiKeypress(c, undefined, { name: "tab" }); await handleTuiKeypress(c, undefined, { name: "tab" }); await handleTuiKeypress(c, "d", { name: "d" }); await handleTuiKeypress(c, "u", { name: "u" }); await handleTuiKeypress(c, undefined, { name: "down" }); await handleTuiKeypress(c, undefined, { name: "return" }); console.log(c.state.activeTab + ":" + c.state.wordFilter + ":" + c.state.selectedWord?.name);'
 ```
 
 Expected output:
@@ -676,12 +676,12 @@ Expected output:
 help:du:DUP2
 ```
 
-- [ ] **Step 5: Confirm no HP behavior files changed**
+- [x] **Step 5: Confirm no HP behavior files changed**
 
 Run:
 
 ```bash
-git diff --name-only HEAD~3..HEAD
+git diff --name-only cd9169b99a13a7229152cc1426323f838bb0944c..HEAD
 ```
 
 Expected: output includes only TUI files, TUI tests, and this plan:
@@ -696,7 +696,7 @@ tests/tui-render.test.ts
 tests/tui-state.test.ts
 ```
 
-- [ ] **Step 6: Commit plan closure**
+- [x] **Step 6: Commit plan closure**
 
 Run:
 
