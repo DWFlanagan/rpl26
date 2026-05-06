@@ -33,7 +33,7 @@ This is local `rpl26` interface behavior, not HP command behavior. No HP manual 
 - Modify: `src/tui/state.ts`
 - Modify: `docs/superpowers/plans/2026-05-05-deferred-tui-help-refinement.md`
 
-- [ ] **Step 1: Replace reducer tests with focused Words behavior coverage**
+- [x] **Step 1: Replace reducer tests with focused Words behavior coverage**
 
 Replace `tests/tui-state.test.ts` with:
 
@@ -103,6 +103,18 @@ describe("TUI state", () => {
     expect(clamped.selectedWord?.name).toBe("DUP2");
   });
 
+  it("settles missing or stale word selection on the first visible word", () => {
+    const filtered = reduceTuiState(wordsState(), { type: "setWordFilter", query: "dup" });
+    const staleWord = reduceTuiState(wordsState(), { type: "setWordFilter", query: "drop" }).selectedWord;
+    const missingSelection = { ...filtered, selectedWord: undefined };
+    const staleSelection = { ...filtered, selectedWord: staleWord };
+
+    expect(reduceTuiState(missingSelection, { type: "selectNextWord" }).selectedWord?.name).toBe("DUP");
+    expect(reduceTuiState(missingSelection, { type: "selectPreviousWord" }).selectedWord?.name).toBe("DUP");
+    expect(reduceTuiState(staleSelection, { type: "selectNextWord" }).selectedWord?.name).toBe("DUP");
+    expect(reduceTuiState(staleSelection, { type: "selectPreviousWord" }).selectedWord?.name).toBe("DUP");
+  });
+
   it("keeps no-match selection empty and allows Help activation", () => {
     const filtered = reduceTuiState(wordsState(), { type: "setWordFilter", query: "zzzz" });
     const moved = reduceTuiState(reduceTuiState(filtered, { type: "selectNextWord" }), { type: "selectPreviousWord" });
@@ -150,7 +162,7 @@ describe("TUI state", () => {
 });
 ```
 
-- [ ] **Step 2: Run reducer tests to verify failure**
+- [x] **Step 2: Run reducer tests to verify failure**
 
 Run:
 
@@ -160,7 +172,7 @@ npm test -- tests/tui-state.test.ts
 
 Expected: FAIL with TypeScript or assertion errors because `appendWordFilter`, `backspaceWordFilter`, `showSelectedWordHelp`, and `escapeWords` are not implemented, and selection currently wraps.
 
-- [ ] **Step 3: Replace reducer implementation**
+- [x] **Step 3: Replace reducer implementation**
 
 Replace `src/tui/state.ts` with:
 
@@ -228,8 +240,9 @@ function moveTab(activeTab: TuiTab, delta: number): TuiTab {
 
 function moveWord(words: WordMetadata[], selected: WordMetadata | undefined, delta: number): WordMetadata | undefined {
   if (words.length === 0) return undefined;
-  const rawIndex = selected === undefined ? 0 : words.findIndex((word) => word.name === selected.name);
-  const index = rawIndex < 0 ? 0 : rawIndex;
+  if (selected === undefined) return words[0];
+  const index = words.findIndex((word) => word.name === selected.name);
+  if (index < 0) return words[0];
   const nextIndex = Math.min(Math.max(index + delta, 0), words.length - 1);
   return words[nextIndex];
 }
@@ -273,7 +286,7 @@ export function reduceTuiState(state: TuiState, action: TuiAction): TuiState {
 }
 ```
 
-- [ ] **Step 4: Run reducer tests to verify pass**
+- [x] **Step 4: Run reducer tests to verify pass**
 
 Run:
 
@@ -283,7 +296,7 @@ npm test -- tests/tui-state.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit reducer semantics**
+- [x] **Step 5: Commit reducer semantics**
 
 Run:
 

@@ -27,6 +27,10 @@ export type TuiAction =
   | { type: "insertText"; text: string }
   | { type: "backspace" }
   | { type: "setWordFilter"; query: string }
+  | { type: "appendWordFilter"; text: string }
+  | { type: "backspaceWordFilter" }
+  | { type: "escapeWords" }
+  | { type: "showSelectedWordHelp" }
   | { type: "selectNextWord" }
   | { type: "selectPreviousWord" }
   | { type: "recordOutput"; input: string; output: string; ok: boolean }
@@ -34,16 +38,18 @@ export type TuiAction =
 
 const TABS: TuiTab[] = ["history", "vars", "words", "help", "trace", "session"];
 
+function wordFilterState(query: string): Pick<TuiState, "wordFilter" | "visibleWords" | "selectedWord"> {
+  const visibleWords = searchWords(query);
+  return { wordFilter: query, visibleWords, selectedWord: visibleWords[0] };
+}
+
 export function createTuiState(): TuiState {
-  const visibleWords = searchWords("");
   return {
     activeTab: "history",
     input: "",
     history: [],
     status: "ready",
-    wordFilter: "",
-    visibleWords,
-    selectedWord: visibleWords[0],
+    ...wordFilterState(""),
     dirty: false
   };
 }
@@ -55,8 +61,11 @@ function moveTab(activeTab: TuiTab, delta: number): TuiTab {
 
 function moveWord(words: WordMetadata[], selected: WordMetadata | undefined, delta: number): WordMetadata | undefined {
   if (words.length === 0) return undefined;
-  const index = selected === undefined ? 0 : words.findIndex((word) => word.name === selected.name);
-  return words[(Math.max(index, 0) + delta + words.length) % words.length];
+  if (selected === undefined) return words[0];
+  const index = words.findIndex((word) => word.name === selected.name);
+  if (index < 0) return words[0];
+  const nextIndex = Math.min(Math.max(index + delta, 0), words.length - 1);
+  return words[nextIndex];
 }
 
 export function reduceTuiState(state: TuiState, action: TuiAction): TuiState {
@@ -69,10 +78,17 @@ export function reduceTuiState(state: TuiState, action: TuiAction): TuiState {
       return { ...state, input: `${state.input}${action.text}` };
     case "backspace":
       return { ...state, input: state.input.slice(0, -1) };
-    case "setWordFilter": {
-      const visibleWords = searchWords(action.query);
-      return { ...state, wordFilter: action.query, visibleWords, selectedWord: visibleWords[0] };
-    }
+    case "setWordFilter":
+      return { ...state, ...wordFilterState(action.query) };
+    case "appendWordFilter":
+      return { ...state, ...wordFilterState(`${state.wordFilter}${action.text}`) };
+    case "backspaceWordFilter":
+      return { ...state, ...wordFilterState(state.wordFilter.slice(0, -1)) };
+    case "escapeWords":
+      if (state.wordFilter.length > 0) return { ...state, ...wordFilterState("") };
+      return { ...state, activeTab: "history" };
+    case "showSelectedWordHelp":
+      return { ...state, activeTab: "help" };
     case "selectNextWord":
       return { ...state, selectedWord: moveWord(state.visibleWords, state.selectedWord, 1) };
     case "selectPreviousWord":
