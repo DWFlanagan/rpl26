@@ -662,7 +662,7 @@ Expected: commit succeeds.
 - Create: `tests/integration-service.test.ts`
 - Modify: `docs/superpowers/plans/2026-05-06-rpl26-milestone-7.md`
 
-- [ ] **Step 1: Write failing service tests**
+- [x] **Step 1: Write failing service tests**
 
 Create `tests/integration-service.test.ts`:
 
@@ -755,7 +755,7 @@ describe("IntegrationService", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -765,7 +765,7 @@ npm test -- tests/integration-service.test.ts
 
 Expected: FAIL because `IntegrationService` does not exist.
 
-- [ ] **Step 3: Implement the integration service**
+- [x] **Step 3: Implement the integration service**
 
 Create `src/integration/service.ts`:
 
@@ -1016,7 +1016,7 @@ export class IntegrationService {
 }
 ```
 
-- [ ] **Step 4: Run service tests**
+- [x] **Step 4: Run service tests**
 
 Run:
 
@@ -1026,7 +1026,7 @@ npm test -- tests/integration-service.test.ts
 
 Expected: PASS. If TypeScript reports a type error around `IntegrationResult` narrowing, fix it by returning concrete result objects rather than loosening types.
 
-- [ ] **Step 5: Run focused existing tests**
+- [x] **Step 5: Run focused existing tests**
 
 Run:
 
@@ -1036,7 +1036,7 @@ npm test -- tests/session.test.ts tests/session-snapshot.test.ts tests/parser.te
 
 Expected: PASS.
 
-- [ ] **Step 6: Run typecheck**
+- [x] **Step 6: Run typecheck**
 
 Run:
 
@@ -1046,11 +1046,11 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 7: Mark task complete in this plan**
+- [x] **Step 7: Mark task complete in this plan**
 
 Change this task's checkboxes from `[ ]` to `[x]` as each step completes.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 Run:
 
