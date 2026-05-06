@@ -365,7 +365,7 @@ Expected: commit succeeds.
 - Create: `tests/integration-project.test.ts`
 - Modify: `docs/superpowers/plans/2026-05-06-rpl26-milestone-7.md`
 
-- [ ] **Step 1: Write failing project tests**
+- [x] **Step 1: Write failing project tests**
 
 Create `tests/integration-project.test.ts`:
 
@@ -443,7 +443,7 @@ describe("integration project persistence", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -453,7 +453,7 @@ npm test -- tests/integration-project.test.ts
 
 Expected: FAIL because integration project modules do not exist.
 
-- [ ] **Step 3: Add integration types**
+- [x] **Step 3: Add integration types**
 
 Create `src/integration/types.ts`:
 
@@ -505,7 +505,7 @@ export type IntegrationError = {
 export type IntegrationResult<T> = { ok: true; value: T } | { ok: false; error: IntegrationError };
 ```
 
-- [ ] **Step 4: Implement project validation and file helpers**
+- [x] **Step 4: Implement project validation and file helpers**
 
 Create `src/integration/project.ts`:
 
@@ -618,7 +618,7 @@ export async function writeProjectFile(path: string, project: ProjectSnapshot): 
 }
 ```
 
-- [ ] **Step 5: Run project tests**
+- [x] **Step 5: Run project tests**
 
 Run:
 
@@ -628,7 +628,7 @@ npm test -- tests/integration-project.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 6: Run typecheck**
+- [x] **Step 6: Run typecheck**
 
 Run:
 
@@ -638,11 +638,11 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 7: Mark task complete in this plan**
+- [x] **Step 7: Mark task complete in this plan**
 
 Change this task's checkboxes from `[ ]` to `[x]` as each step completes.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 Run:
 
