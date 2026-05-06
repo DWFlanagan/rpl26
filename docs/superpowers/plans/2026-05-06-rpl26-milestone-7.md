@@ -1315,7 +1315,7 @@ Expected: commit succeeds.
 - Modify: `package.json`
 - Modify: `docs/superpowers/plans/2026-05-06-rpl26-milestone-7.md`
 
-- [ ] **Step 1: Write failing JSON engine tests**
+- [x] **Step 1: Write failing JSON engine tests**
 
 Create `tests/json-engine.test.ts`:
 
@@ -1361,7 +1361,7 @@ describe("JSON stdio engine handler", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -1371,7 +1371,7 @@ npm test -- tests/json-engine.test.ts
 
 Expected: FAIL because JSON engine modules do not exist.
 
-- [ ] **Step 3: Implement the testable JSON handler**
+- [x] **Step 3: Implement the testable JSON handler**
 
 Create `src/integration/json-engine.ts`:
 
@@ -1455,7 +1455,7 @@ export async function handleJsonEngineLine(service: IntegrationService, line: st
 }
 ```
 
-- [ ] **Step 4: Implement the engine entry point**
+- [x] **Step 4: Implement the engine entry point**
 
 Create `src/engine.ts`:
 
@@ -1490,7 +1490,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 ```
 
-- [ ] **Step 5: Add package script**
+- [x] **Step 5: Add package script**
 
 Modify `package.json` scripts:
 
@@ -1500,7 +1500,7 @@ Modify `package.json` scripts:
 
 Keep the existing scripts unchanged.
 
-- [ ] **Step 6: Run JSON engine tests**
+- [x] **Step 6: Run JSON engine tests**
 
 Run:
 
@@ -1510,7 +1510,7 @@ npm test -- tests/json-engine.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 7: Run build**
+- [x] **Step 7: Run build**
 
 Run:
 
@@ -1520,7 +1520,7 @@ npm run build
 
 Expected: PASS.
 
-- [ ] **Step 8: Run a JSON engine smoke check**
+- [x] **Step 8: Run a JSON engine smoke check**
 
 Run:
 
@@ -1530,11 +1530,11 @@ printf '%s\n' '{"id":"1","method":"execute","params":{"input":"2 3 +"}}' '{"id":
 
 Expected output includes one response with `"ok":true` and stack level 1 real value 5, followed by a shutdown response.
 
-- [ ] **Step 9: Mark task complete in this plan**
+- [x] **Step 9: Mark task complete in this plan**
 
 Change this task's checkboxes from `[ ]` to `[x]` as each step completes.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 Run:
 
