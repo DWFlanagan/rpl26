@@ -494,7 +494,7 @@ Expected: commit succeeds.
 - Modify: `src/tui/render.ts`
 - Modify: `docs/superpowers/plans/2026-05-05-deferred-tui-help-refinement.md`
 
-- [ ] **Step 1: Add renderer tests for filter and selection feedback**
+- [x] **Step 1: Add renderer tests for filter and selection feedback**
 
 Append these tests inside the existing `describe("TUI renderer", () => { ... })` block in `tests/tui-render.test.ts`:
 
@@ -531,7 +531,7 @@ Append these tests inside the existing `describe("TUI renderer", () => { ... })`
   });
 ```
 
-- [ ] **Step 2: Update existing renderer expectation**
+- [x] **Step 2: Update existing renderer expectation**
 
 In the existing `shows active pane content without history on non-history tabs` test, change:
 
@@ -545,7 +545,7 @@ to:
 expect(leftColumn[0]).toBe("filter: <type to search>");
 ```
 
-- [ ] **Step 3: Run renderer tests to verify failure**
+- [x] **Step 3: Run renderer tests to verify failure**
 
 Run:
 
@@ -555,7 +555,7 @@ npm test -- tests/tui-render.test.ts
 
 Expected: FAIL because the Words pane currently renders `filter: ` without placeholder text, lacks selected row markers, and does not show `No matches.`.
 
-- [ ] **Step 4: Replace Words pane rendering**
+- [x] **Step 4: Replace Words pane rendering**
 
 In `src/tui/render.ts`, add this helper above `activePane`:
 
@@ -580,7 +580,7 @@ Then replace the `case "words"` branch in `activePane` with:
       return wordLines(state);
 ```
 
-- [ ] **Step 5: Run renderer tests to verify pass**
+- [x] **Step 5: Run renderer tests to verify pass**
 
 Run:
 
@@ -590,7 +590,7 @@ npm test -- tests/tui-render.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 6: Run focused TUI tests together**
+- [x] **Step 6: Run focused TUI tests together**
 
 Run:
 
@@ -600,7 +600,7 @@ npm test -- tests/tui-state.test.ts tests/tui-entry.test.ts tests/tui-render.tes
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit rendering**
+- [x] **Step 7: Commit rendering**
 
 Run:
 

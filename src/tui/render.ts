@@ -46,6 +46,18 @@ function historyLines(state: TuiState, compactStackResults: boolean): string[] {
   });
 }
 
+function wordLines(state: TuiState): string[] {
+  const filter = state.wordFilter.length === 0 ? "filter: <type to search>" : `filter: ${state.wordFilter}`;
+  if (state.visibleWords.length === 0) return [filter, "No matches."];
+  return [
+    filter,
+    ...state.visibleWords.slice(0, 12).map((word) => {
+      const marker = word.name === state.selectedWord?.name ? "> " : "  ";
+      return `${marker}${word.name} (${word.category}) ${word.stack}`;
+    })
+  ];
+}
+
 function activePane(state: TuiState, session: CalculatorSession, compactHistory: boolean): string[] {
   switch (state.activeTab) {
     case "history":
@@ -53,7 +65,7 @@ function activePane(state: TuiState, session: CalculatorSession, compactHistory:
     case "vars":
       return lines(formatVariables(session.getVariables(), true));
     case "words":
-      return [`filter: ${state.wordFilter}`, ...state.visibleWords.slice(0, 12).map((word) => `${word.name} (${word.category}) ${word.stack}`)];
+      return wordLines(state);
     case "help":
       return lines(state.selectedWord === undefined ? "No word selected." : describeWordDetail(state.selectedWord.name) ?? "No help.");
     case "trace":

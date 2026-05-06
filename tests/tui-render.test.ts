@@ -78,10 +78,41 @@ describe("TUI renderer", () => {
     const body = output.split("\n").slice(2, -2);
     const leftColumn = body.map((line) => line.slice(0, 55).trimEnd());
 
-    expect(leftColumn[0]).toBe("filter:");
+    expect(leftColumn[0]).toBe("filter: <type to search>");
     expect(leftColumn).not.toContain("Words");
     expect(leftColumn).not.toContain("> 5");
     expect(leftColumn).not.toContain("1: 5");
+  });
+
+  it("shows an empty Words filter prompt and selected row marker", () => {
+    const words = reduceTuiState(reduceTuiState(createTuiState(), { type: "nextTab" }), { type: "nextTab" });
+
+    const output = renderTui(words, new CalculatorSession(), { width: 90, height: 18, color: false });
+
+    expect(output).toContain("filter: <type to search>");
+    expect(output).toContain("> * (math) real real -> real");
+  });
+
+  it("shows a non-empty Words filter and no-match message", () => {
+    const words = reduceTuiState(reduceTuiState(createTuiState(), { type: "nextTab" }), { type: "nextTab" });
+    const filtered = reduceTuiState(words, { type: "setWordFilter", query: "zzzz" });
+
+    const output = renderTui(filtered, new CalculatorSession(), { width: 90, height: 18, color: false });
+
+    expect(output).toContain("filter: zzzz");
+    expect(output).toContain("No matches.");
+  });
+
+  it("renders Help for the selected word after activation", () => {
+    const words = reduceTuiState(reduceTuiState(createTuiState(), { type: "nextTab" }), { type: "nextTab" });
+    const filtered = reduceTuiState(words, { type: "setWordFilter", query: "dup" });
+    const help = reduceTuiState(filtered, { type: "showSelectedWordHelp" });
+
+    const output = renderTui(help, new CalculatorSession(), { width: 90, height: 18, color: false });
+
+    expect(output).toContain("DUP");
+    expect(output).toContain("Category: stack");
+    expect(output).toContain("Duplicate level 1.");
   });
 
   it("keeps stack results in narrow history because there is no right inspector", () => {
