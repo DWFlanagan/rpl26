@@ -136,7 +136,7 @@ Expected: commit succeeds.
 - Create: `tests/annotated-source.test.ts`
 - Modify: `docs/superpowers/plans/2026-05-06-rpl26-milestone-7.md`
 
-- [ ] **Step 1: Write failing annotated source tests**
+- [x] **Step 1: Write failing annotated source tests**
 
 Create `tests/annotated-source.test.ts`:
 
@@ -173,7 +173,7 @@ describe("annotated RPL source", () => {
         { kind: "real", value: 1, source: "1" },
         { kind: "name", name: "+", source: "+" }
       ],
-      source: "<<\n  \n  1 +\n>>"
+      source: "<< 1 + >>"
     });
     expect(result.executableSource).toBe("<<\n  \n  1 +\n>>");
   });
@@ -199,7 +199,7 @@ describe("annotated RPL source", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -209,7 +209,7 @@ npm test -- tests/annotated-source.test.ts
 
 Expected: FAIL because `src/annotated-source.ts` does not exist.
 
-- [ ] **Step 3: Implement annotated source utilities**
+- [x] **Step 3: Implement annotated source utilities**
 
 Create `src/annotated-source.ts`:
 
@@ -320,7 +320,7 @@ export function exportAnnotatedSource(source: string, mode: ExportMode): ExportS
 }
 ```
 
-- [ ] **Step 4: Run annotated source tests**
+- [x] **Step 4: Run annotated source tests**
 
 Run:
 
@@ -330,7 +330,7 @@ npm test -- tests/annotated-source.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Run typecheck**
+- [x] **Step 5: Run typecheck**
 
 Run:
 
@@ -340,11 +340,11 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 6: Mark task complete in this plan**
+- [x] **Step 6: Mark task complete in this plan**
 
 Change this task's checkboxes from `[ ]` to `[x]` as each step completes.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 Run:
 
