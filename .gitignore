@@ -1,5 +1,6 @@
 dist/
 node_modules/
 .worktrees/
+.superpowers/
 .DS_Store
 docs/hp48gug.md
