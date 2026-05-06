@@ -61,8 +61,22 @@ export async function handleTuiKeypress(
   text: string | undefined,
   key: TuiKey
 ): Promise<TuiKeypressResult> {
-  if (key.name === "tab") controller.dispatch(key.shift ? { type: "previousTab" } : { type: "nextTab" });
-  else if (key.name === "backspace") controller.dispatch({ type: "backspace" });
+  if (key.name === "tab") {
+    controller.dispatch(key.shift ? { type: "previousTab" } : { type: "nextTab" });
+    return "continue";
+  }
+
+  if (controller.state.activeTab === "words") {
+    if (key.name === "backspace") controller.dispatch({ type: "backspaceWordFilter" });
+    else if (key.name === "up") controller.dispatch({ type: "selectPreviousWord" });
+    else if (key.name === "down") controller.dispatch({ type: "selectNextWord" });
+    else if (key.name === "return") controller.dispatch({ type: "showSelectedWordHelp" });
+    else if (key.name === "escape") controller.dispatch({ type: "escapeWords" });
+    else if (text !== undefined && text >= " ") controller.dispatch({ type: "appendWordFilter", text });
+    return "continue";
+  }
+
+  if (key.name === "backspace") controller.dispatch({ type: "backspace" });
   else if (key.name === "return") {
     const result = await controller.submit(controller.state.input);
     if (result === "exit") return "exit";

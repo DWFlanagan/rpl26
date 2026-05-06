@@ -316,7 +316,7 @@ Expected: commit succeeds.
 - Modify: `src/tui/app.ts`
 - Modify: `docs/superpowers/plans/2026-05-05-deferred-tui-help-refinement.md`
 
-- [ ] **Step 1: Add key routing tests**
+- [x] **Step 1: Add key routing tests**
 
 Replace `tests/tui-entry.test.ts` with:
 
@@ -410,7 +410,7 @@ describe("TUI entry support", () => {
 });
 ```
 
-- [ ] **Step 2: Run controller tests to verify failure**
+- [x] **Step 2: Run controller tests to verify failure**
 
 Run:
 
@@ -420,7 +420,7 @@ npm test -- tests/tui-entry.test.ts
 
 Expected: FAIL because Words printable keys still edit command input, Backspace edits command input, Return submits command input, and Esc is not handled.
 
-- [ ] **Step 3: Update keypress routing**
+- [x] **Step 3: Update keypress routing**
 
 In `src/tui/app.ts`, replace `handleTuiKeypress` with:
 
@@ -454,7 +454,7 @@ export async function handleTuiKeypress(
 }
 ```
 
-- [ ] **Step 4: Run controller tests to verify pass**
+- [x] **Step 4: Run controller tests to verify pass**
 
 Run:
 
@@ -464,7 +464,7 @@ npm test -- tests/tui-entry.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Run reducer and controller tests together**
+- [x] **Step 5: Run reducer and controller tests together**
 
 Run:
 
@@ -474,7 +474,7 @@ npm test -- tests/tui-state.test.ts tests/tui-entry.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit controller key routing**
+- [x] **Step 6: Commit controller key routing**
 
 Run:
 
