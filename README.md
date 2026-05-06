@@ -100,6 +100,46 @@ Programs are still normal RPL variables:
 
 Comments are ignored for execution. `rpl26` export preserves them, while `hp48-user-rpl` export produces calculator-oriented stripped source. Export is source-oriented and limited to the implemented `rpl26` subset; it does not validate full HP compatibility.
 
+## Claude Desktop MCP Setup
+
+Build the MCP server first:
+
+```bash
+cd /Users/dwf/code/rpn50
+npm run build
+```
+
+On macOS, open Claude Desktop's local MCP config:
+
+```text
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+Add `rpl26` under `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "rpl26": {
+      "command": "/opt/homebrew/bin/node",
+      "args": [
+        "/Users/dwf/code/rpn50/dist/src/mcp/server.js"
+      ]
+    }
+  }
+}
+```
+
+If the file already contains other MCP servers, merge only the `rpl26` entry into the existing `mcpServers` object.
+
+Restart Claude Desktop after editing the config. Then ask Claude something like:
+
+```text
+Use rpl26 to run 2 3 + and show me the stack.
+```
+
+Claude Desktop launches local MCP servers as stdio processes, so rebuild with `npm run build` whenever TypeScript changes before expecting Claude to see the new server behavior.
+
 ## Agent Skill
 
 `rpl26` includes an agent skill for readable RPL workflows:
