@@ -563,9 +563,11 @@ In `src/tui/render.ts`, add this helper above `activePane`:
 function wordLines(state: TuiState): string[] {
   const filter = state.wordFilter.length === 0 ? "filter: <type to search>" : `filter: ${state.wordFilter}`;
   if (state.visibleWords.length === 0) return [filter, "No matches."];
+  const selectedIndex = state.selectedWord === undefined ? -1 : state.visibleWords.findIndex((word) => word.name === state.selectedWord?.name);
+  const startIndex = selectedIndex < 0 ? 0 : Math.max(0, selectedIndex - 11);
   return [
     filter,
-    ...state.visibleWords.slice(0, 12).map((word) => {
+    ...state.visibleWords.slice(startIndex, startIndex + 12).map((word) => {
       const marker = word.name === state.selectedWord?.name ? "> " : "  ";
       return `${marker}${word.name} (${word.category}) ${word.stack}`;
     })
@@ -610,6 +612,18 @@ git commit -m "feat: render tui word selection"
 ```
 
 Expected: commit succeeds.
+
+- [x] **Review follow-up: Keep selected Words row in the rendered page**
+
+Add a regression test that navigates past the first twelve visible words and asserts the selected row remains visible with exactly one `> ` marker in the rendered left pane.
+
+Update `wordLines` so the 12-row Words window includes `selectedWord` when the selection is present in `visibleWords`, while stale or missing selections continue to fall back to the first twelve visible words.
+
+- [x] **Second review follow-up: Size the Words window to the rendered body**
+
+Add a short-height regression test that navigates beyond the available rendered word rows and asserts the selected row remains visible with exactly one `> ` marker in the rendered left pane.
+
+Update `wordLines` to accept the rendered body height, reserve one row for the filter, and render the selected-word window from the remaining word-row capacity. When there are no matches, keep rendering the filter and show `No matches.` only when there is body space after the filter.
 
 ## Task 4: Verification And Plan Closure
 

@@ -93,6 +93,38 @@ describe("TUI renderer", () => {
     expect(output).toContain("> * (math) real real -> real");
   });
 
+  it("keeps the selected Words row visible after navigation past the first page", () => {
+    let words = reduceTuiState(reduceTuiState(createTuiState(), { type: "nextTab" }), { type: "nextTab" });
+    for (let index = 0; index < 13; index += 1) {
+      words = reduceTuiState(words, { type: "selectNextWord" });
+    }
+
+    const output = renderTui(words, new CalculatorSession(), { width: 90, height: 18, color: false });
+    const body = output.split("\n").slice(2, -2);
+    const leftColumn = body.map((line) => line.slice(0, 55).trimEnd());
+    const selectedRows = leftColumn.filter((line) => line.startsWith("> "));
+
+    expect(words.selectedWord?.name).toBeDefined();
+    expect(leftColumn).toContain(`> ${words.selectedWord?.name} (${words.selectedWord?.category}) ${words.selectedWord?.stack}`);
+    expect(selectedRows).toHaveLength(1);
+  });
+
+  it("keeps the selected Words row visible at short supported heights", () => {
+    let words = reduceTuiState(reduceTuiState(createTuiState(), { type: "nextTab" }), { type: "nextTab" });
+    for (let index = 0; index < 8; index += 1) {
+      words = reduceTuiState(words, { type: "selectNextWord" });
+    }
+
+    const output = renderTui(words, new CalculatorSession(), { width: 90, height: 12, color: false });
+    const body = output.split("\n").slice(2, -2);
+    const leftColumn = body.map((line) => line.slice(0, 55).trimEnd());
+    const selectedRows = leftColumn.filter((line) => line.startsWith("> "));
+
+    expect(words.selectedWord?.name).toBeDefined();
+    expect(leftColumn).toContain(`> ${words.selectedWord?.name} (${words.selectedWord?.category}) ${words.selectedWord?.stack}`);
+    expect(selectedRows).toHaveLength(1);
+  });
+
   it("shows a non-empty Words filter and no-match message", () => {
     const words = reduceTuiState(reduceTuiState(createTuiState(), { type: "nextTab" }), { type: "nextTab" });
     const filtered = reduceTuiState(words, { type: "setWordFilter", query: "zzzz" });

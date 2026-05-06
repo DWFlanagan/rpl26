@@ -46,26 +46,30 @@ function historyLines(state: TuiState, compactStackResults: boolean): string[] {
   });
 }
 
-function wordLines(state: TuiState): string[] {
+function wordLines(state: TuiState, maxLines: number): string[] {
+  if (maxLines <= 0) return [];
   const filter = state.wordFilter.length === 0 ? "filter: <type to search>" : `filter: ${state.wordFilter}`;
-  if (state.visibleWords.length === 0) return [filter, "No matches."];
+  const wordRowCount = Math.max(0, maxLines - 1);
+  if (state.visibleWords.length === 0) return wordRowCount > 0 ? [filter, "No matches."] : [filter];
+  const selectedIndex = state.selectedWord === undefined ? -1 : state.visibleWords.findIndex((word) => word.name === state.selectedWord?.name);
+  const startIndex = selectedIndex < 0 || wordRowCount === 0 ? 0 : Math.max(0, selectedIndex - wordRowCount + 1);
   return [
     filter,
-    ...state.visibleWords.slice(0, 12).map((word) => {
-      const marker = word.name === state.selectedWord?.name ? "> " : "  ";
+    ...state.visibleWords.slice(startIndex, startIndex + wordRowCount).map((word, index) => {
+      const marker = startIndex + index === selectedIndex ? "> " : "  ";
       return `${marker}${word.name} (${word.category}) ${word.stack}`;
     })
   ];
 }
 
-function activePane(state: TuiState, session: CalculatorSession, compactHistory: boolean): string[] {
+function activePane(state: TuiState, session: CalculatorSession, compactHistory: boolean, maxLines: number): string[] {
   switch (state.activeTab) {
     case "history":
       return historyLines(state, compactHistory);
     case "vars":
       return lines(formatVariables(session.getVariables(), true));
     case "words":
-      return wordLines(state);
+      return wordLines(state, maxLines);
     case "help":
       return lines(state.selectedWord === undefined ? "No word selected." : describeWordDetail(state.selectedWord.name) ?? "No help.");
     case "trace":
@@ -86,7 +90,7 @@ export function renderTui(state: TuiState, session: CalculatorSession, options: 
   const bodyHeight = height - 5;
   const leftWidth = wide ? Math.floor(width * 0.62) : width;
   const rightWidth = wide ? width - leftWidth - 3 : 0;
-  const pane = activePane(state, session, wide);
+  const pane = activePane(state, session, wide, bodyHeight);
   const stack = wide ? ["Stack", ...lines(formatStack(session.getStack())), "", "Vars", ...lines(formatVariables(session.getVariables()))] : [];
   const body = Array.from({ length: bodyHeight }, (_, index) => {
     const left = clip(pane[index] ?? "", leftWidth);
