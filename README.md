@@ -26,7 +26,7 @@ The REPL supports `.stack`, `.stack --verbose`, `.vars`, `.vars --verbose`, `.tr
 - Milestone 5, conformance suite: source-labeled manual-derived examples, clean-room notes, and fixture validation for supported behavior, deferred behavior, and intentional divergences.
 - Milestone 6, usability surface: richer dot commands, `.find`, `.help WORD`, verbose stack/variable/trace views, saved session snapshots, searchable word metadata, terminal styling, and the keyboard-first TUI.
 
-Current object support includes real numbers, bare names, quoted names, programs, lists, strings, and tagged values. MCP currently exposes `execute`, `get_stack`, `get_variables`, `clear`, and `get_trace`.
+Current object support includes real numbers, bare names, quoted names, programs, lists, strings, and tagged values. MCP exposes calculator tools (`execute`, `get_stack`, `get_variables`, `clear`, `get_trace`), program tools (`store_program`, `run_program_examples`, `export_program`, `get_program_source`, `inspect_program`, `list_programs`), and session tools (`list_sessions`, `create_session`, `select_session`, `delete_session`, `get_session_status`, `save_session`, `load_session`).
 
 ## Examples
 
@@ -76,6 +76,100 @@ npm run tui
 ```
 
 The TUI is separate from `npm run repl`. It keeps stack and variable inspection visible, lets you switch panes with the keyboard, searches words, shows help and trace details, and uses the same snapshot commands as the plain REPL.
+
+## Readable RPL And Agent Authoring
+
+Milestone 7 adds an integration surface for readable RPL authoring.
+
+Programs are still normal RPL variables:
+
+```rpl
+<< * >> 'AREA' STO
+```
+
+`rpl26` can also preserve annotated source with `@` comments:
+
+```rpl
+<<
+  @ AREA(width, height)
+  @ Multiply width by height and leave area on the stack.
+  @ Stack: width height -> area
+  *
+>>
+```
+
+Comments are ignored for execution. `rpl26` export preserves them, while `hp48-user-rpl` export produces calculator-oriented stripped source. Export is source-oriented and limited to the implemented `rpl26` subset; it does not validate full HP compatibility.
+
+## Claude Desktop MCP Setup
+
+Build the MCP server first:
+
+```bash
+cd /Users/dwf/code/rpn50
+npm run build
+```
+
+On macOS, open Claude Desktop's local MCP config:
+
+```text
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+Add `rpl26` under `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "rpl26": {
+      "command": "/opt/homebrew/bin/node",
+      "args": [
+        "/Users/dwf/code/rpn50/dist/src/mcp/server.js"
+      ]
+    }
+  }
+}
+```
+
+If the file already contains other MCP servers, merge only the `rpl26` entry into the existing `mcpServers` object.
+
+Restart Claude Desktop after editing the config. Then ask Claude something like:
+
+```text
+Use rpl26 to run 2 3 + and show me the stack.
+```
+
+Claude Desktop launches local MCP servers as stdio processes, so rebuild with `npm run build` whenever TypeScript changes before expecting Claude to see the new server behavior.
+
+## Agent Skill
+
+`rpl26` includes an agent skill for readable RPL workflows:
+
+- `skills/rpl26/SKILL.md`
+
+Use it with Codex, Claude-style agents, or other MCP clients when connecting to the `rpl26` MCP server. The skill teaches agents to write annotated RPL, store programs as variables, run examples, save sessions, and export stripped calculator-oriented source when needed.
+
+## JSON Engine
+
+Build first, then launch the local JSON stdio engine:
+
+```bash
+npm run build
+npm run engine
+```
+
+The engine accepts one JSON request per line and returns one JSON response per line. It is intended for scripts, editor extensions, and the future SwiftUI menu bar app.
+
+Example request line:
+
+```json
+{"id":"1","method":"execute","params":{"input":"2 3 +"}}
+```
+
+Example response line:
+
+```json
+{"id":"1","ok":true,"result":{"ok":true,"stack":[{"level":1,"value":{"kind":"real","value":5}}],"variables":{},"trace":[]}}
+```
 
 ## Clean-Room Rule
 
