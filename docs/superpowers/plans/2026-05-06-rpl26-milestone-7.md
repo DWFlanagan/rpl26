@@ -1070,7 +1070,7 @@ Expected: commit succeeds.
 - Modify: `tests/mcp-server.test.ts`
 - Modify: `docs/superpowers/plans/2026-05-06-rpl26-milestone-7.md`
 
-- [ ] **Step 1: Replace MCP tests with service-backed expectations**
+- [x] **Step 1: Replace MCP tests with service-backed expectations**
 
 Modify `tests/mcp-server.test.ts` so it keeps existing compatibility coverage and adds new tools:
 
@@ -1159,7 +1159,7 @@ describe("MCP calculator tool handlers", () => {
 });
 ```
 
-- [ ] **Step 2: Run MCP tests to verify they fail**
+- [x] **Step 2: Run MCP tests to verify they fail**
 
 Run:
 
@@ -1169,7 +1169,7 @@ npm test -- tests/mcp-server.test.ts
 
 Expected: FAIL because new MCP tools are not implemented.
 
-- [ ] **Step 3: Update MCP server**
+- [x] **Step 3: Update MCP server**
 
 Modify `src/mcp/server.ts`:
 
@@ -1269,7 +1269,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 ```
 
-- [ ] **Step 4: Run MCP tests**
+- [x] **Step 4: Run MCP tests**
 
 Run:
 
@@ -1279,7 +1279,7 @@ npm test -- tests/mcp-server.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Run typecheck**
+- [x] **Step 5: Run typecheck**
 
 Run:
 
@@ -1289,11 +1289,11 @@ npm run typecheck
 
 Expected: PASS. If `zod` schema typing complains about `sessionArg`, replace spread schemas with explicit object literals for each tool.
 
-- [ ] **Step 6: Mark task complete in this plan**
+- [x] **Step 6: Mark task complete in this plan**
 
 Change this task's checkboxes from `[ ]` to `[x]` as each step completes.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 Run:
 
