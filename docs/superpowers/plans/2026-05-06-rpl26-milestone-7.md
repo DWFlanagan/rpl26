@@ -1555,7 +1555,7 @@ Expected: commit succeeds.
 - Modify: `README.md`
 - Modify: `docs/superpowers/plans/2026-05-06-rpl26-milestone-7.md`
 
-- [ ] **Step 1: Write failing skill-file test**
+- [x] **Step 1: Write failing skill-file test**
 
 Create `tests/skill-file.test.ts`:
 
@@ -1578,7 +1578,7 @@ describe("rpl26 agent skill", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -1588,7 +1588,7 @@ npm test -- tests/skill-file.test.ts
 
 Expected: FAIL because `skills/rpl26/SKILL.md` does not exist.
 
-- [ ] **Step 3: Create the skill**
+- [x] **Step 3: Create the skill**
 
 Create `skills/rpl26/SKILL.md`:
 
@@ -1667,7 +1667,7 @@ Use `export_program`:
 HP-compatible export is source-oriented. Do not promise binary transfer, ROM compatibility, or support for commands outside the implemented `rpl26` subset.
 ```
 
-- [ ] **Step 4: Document Milestone 7 in README**
+- [x] **Step 4: Document Milestone 7 in README**
 
 Modify `README.md` by adding sections after the Terminal UI section:
 
@@ -1717,7 +1717,7 @@ The engine accepts one JSON request per line and returns one JSON response per l
 
 Place these sections after the existing Terminal UI section. If a heading with the same name exists, replace that heading's content with the text above.
 
-- [ ] **Step 5: Run skill and README tests**
+- [x] **Step 5: Run skill and README tests**
 
 Run:
 
@@ -1727,7 +1727,7 @@ npm test -- tests/skill-file.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 6: Run full typecheck**
+- [x] **Step 6: Run full typecheck**
 
 Run:
 
@@ -1737,11 +1737,11 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 7: Mark task complete in this plan**
+- [x] **Step 7: Mark task complete in this plan**
 
 Change this task's checkboxes from `[ ]` to `[x]` as each step completes.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 Run:
 
