@@ -141,6 +141,32 @@ export async function handleJsonEngineLine(service: IntegrationService, line: st
         const name = requiredString(params.value, "name");
         return name.ok ? unwrap(id, service.deleteSession({ name: name.value })) : invalidResponse(id, name.error);
       }
+      case "getSessionStatus": {
+        const session = sessionArg(params.value);
+        if (!session.ok) return invalidResponse(id, session.error);
+        const sessions = service.listSessions();
+        if (!sessions.ok) return unwrap(id, sessions);
+        const programs = service.listPrograms(session.value);
+        if (!programs.ok) return unwrap(id, programs);
+        return response(id, { ok: true, result: { sessions: sessions.value, programs: programs.value } });
+      }
+      case "saveSession": {
+        const session = sessionArg(params.value);
+        if (!session.ok) return invalidResponse(id, session.error);
+        const path = requiredString(params.value, "path");
+        return path.ok ? unwrap(id, await service.saveSession({ ...session.value, path: path.value })) : invalidResponse(id, path.error);
+      }
+      case "loadSession": {
+        const name = requiredString(params.value, "name");
+        if (!name.ok) return invalidResponse(id, name.error);
+        const path = requiredString(params.value, "path");
+        if (!path.ok) return invalidResponse(id, path.error);
+        const select = params.value.select;
+        if (select !== undefined && typeof select !== "boolean") {
+          return invalidResponse(id, invalidRequest("select must be a boolean", "select"));
+        }
+        return unwrap(id, await service.loadSession({ name: name.value, path: path.value, select }));
+      }
       case "execute": {
         const session = sessionArg(params.value);
         if (!session.ok) return invalidResponse(id, session.error);

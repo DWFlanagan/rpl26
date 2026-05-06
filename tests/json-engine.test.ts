@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { IntegrationService } from "../src/integration/service.js";
 import { handleJsonEngineLine } from "../src/integration/json-engine.js";
@@ -30,6 +33,40 @@ describe("JSON stdio engine handler", () => {
         JSON.stringify({ id: "2", method: "exportProgram", params: { name: "INC", mode: "hp48-user-rpl" } })
       )
     ).resolves.toBe(JSON.stringify({ id: "2", ok: true, result: { source: "<< \n 1 + >>", warnings: [] } }));
+  });
+
+  it("saves, loads, and reports session status", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "rpl26-json-engine-"));
+    const path = join(dir, "project.json");
+    const service = new IntegrationService();
+
+    try {
+      await handleJsonEngineLine(
+        service,
+        JSON.stringify({ id: "1", method: "storeProgram", params: { name: "INC", source: "<< 1 + >>" } })
+      );
+      await expect(
+        handleJsonEngineLine(service, JSON.stringify({ id: "2", method: "saveSession", params: { path } }))
+      ).resolves.toBe(JSON.stringify({ id: "2", ok: true, result: { path } }));
+      await expect(
+        handleJsonEngineLine(service, JSON.stringify({ id: "3", method: "loadSession", params: { name: "loaded", path } }))
+      ).resolves.toBe(JSON.stringify({ id: "3", ok: true, result: { name: "loaded", selected: true } }));
+
+      const status = JSON.parse(await handleJsonEngineLine(service, JSON.stringify({ id: "4", method: "getSessionStatus" })));
+      expect(status).toMatchObject({
+        id: "4",
+        ok: true,
+        result: {
+          sessions: [
+            { name: "default", selected: false },
+            { name: "loaded", selected: true }
+          ],
+          programs: [{ name: "INC", annotated: true, stale: false }]
+        }
+      });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("returns structured errors for invalid JSON, missing methods, and unknown methods", async () => {

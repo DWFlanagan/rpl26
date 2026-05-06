@@ -1759,7 +1759,7 @@ Expected: commit succeeds.
 **Files:**
 - Modify: `docs/superpowers/plans/2026-05-06-rpl26-milestone-7.md`
 
-- [ ] **Step 1: Run full test suite**
+- [x] **Step 1: Run full test suite**
 
 Run:
 
@@ -1769,7 +1769,7 @@ npm test
 
 Expected: PASS.
 
-- [ ] **Step 2: Run typecheck**
+- [x] **Step 2: Run typecheck**
 
 Run:
 
@@ -1779,7 +1779,7 @@ npm run typecheck
 
 Expected: PASS.
 
-- [ ] **Step 3: Run build**
+- [x] **Step 3: Run build**
 
 Run:
 
@@ -1789,7 +1789,7 @@ npm run build
 
 Expected: PASS.
 
-- [ ] **Step 4: Run MCP handler smoke check through tests**
+- [x] **Step 4: Run MCP handler smoke check through tests**
 
 Run:
 
@@ -1799,7 +1799,7 @@ npm test -- tests/mcp-server.test.ts
 
 Expected: PASS, including `store_program`, `run_program_examples`, and `export_program` coverage.
 
-- [ ] **Step 5: Run JSON engine smoke check**
+- [x] **Step 5: Run JSON engine smoke check**
 
 Run:
 
@@ -1809,7 +1809,7 @@ printf '%s\n' '{"id":"1","method":"storeProgram","params":{"name":"VELOCITY","so
 
 Expected: all four responses have `"ok":true`; the export response strips the `@` comment.
 
-- [ ] **Step 6: Inspect changed files**
+- [x] **Step 6: Inspect changed files**
 
 Run:
 
@@ -1819,11 +1819,11 @@ git status --short
 
 Expected: only intentional files are modified.
 
-- [ ] **Step 7: Mark final task complete in this plan**
+- [x] **Step 7: Mark final task complete in this plan**
 
 Change this task's checkboxes from `[ ]` to `[x]` as each step completes.
 
-- [ ] **Step 8: Commit final plan status**
+- [x] **Step 8: Commit final plan status**
 
 Run:
 

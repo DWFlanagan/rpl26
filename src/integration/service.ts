@@ -258,7 +258,16 @@ export class IntegrationService {
   exportProgram({ session, name, mode }: SessionArg & { name: string; mode: ExportMode }): IntegrationResult<{ source: string; warnings: string[] }> {
     const current = this.getProgramSource({ session, name });
     if (!current.ok) return current;
-    return { ok: true, value: exportAnnotatedSource(current.value.source, mode) };
+    const exported = exportAnnotatedSource(current.value.source, mode);
+    return {
+      ok: true,
+      value: {
+        source: exported.source,
+        warnings: current.value.stale
+          ? [...exported.warnings, "annotated source is stale relative to the current variable value"]
+          : exported.warnings
+      }
+    };
   }
 
   inspectProgram({

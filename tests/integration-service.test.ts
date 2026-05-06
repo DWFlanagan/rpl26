@@ -109,6 +109,20 @@ describe("IntegrationService", () => {
     });
   });
 
+  it("warns when exporting stale annotated source", () => {
+    const service = new IntegrationService();
+    service.storeProgram({ session: "default", name: "INC", source: "<< @ add one\n 1 + >>" });
+    service.execute({ session: "default", input: "<< 2 + >> 'INC' STO" });
+
+    expect(service.exportProgram({ session: "default", name: "INC", mode: "rpl26" })).toEqual({
+      ok: true,
+      value: {
+        source: "<< @ add one\n 1 + >>",
+        warnings: ["annotated source is stale relative to the current variable value"]
+      }
+    });
+  });
+
   it("clears stack variables trace and source records", () => {
     const service = new IntegrationService();
     service.storeProgram({ session: "default", name: "INC", source: "<< 1 + >>" });
